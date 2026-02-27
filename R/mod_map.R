@@ -2,18 +2,22 @@
 
 mod_map_ui <- function(id) {
   ns <- shiny::NS(id)
-  leaflet::leafletOutput(ns("map"), height = "500px")
+  leaflet::leafletOutput(ns("map"), height = "65vh")
 }
 
-mod_map_server <- function(id, layers, filters) {
+mod_map_server <- function(id, layers, filters, drawn_aoi) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
-    # Reactive for user-drawn polygon
-    drawn_aoi <- shiny::reactiveVal(NULL)
-
     output$map <- leaflet::renderLeaflet({
+      # Fit map to AOI bounds
+      aoi_bb <- sf::st_bbox(layers$aoi)
+
       leaflet::leaflet() |>
+        leaflet::fitBounds(
+          lng1 = aoi_bb[["xmin"]], lat1 = aoi_bb[["ymin"]],
+          lng2 = aoi_bb[["xmax"]], lat2 = aoi_bb[["ymax"]]
+        ) |>
         leaflet::addProviderTiles("Esri.WorldTopoMap", group = "Topo") |>
         leaflet::addProviderTiles("Esri.WorldImagery", group = "ESRI Aerial") |>
         leaflet::addPolylines(
@@ -79,16 +83,20 @@ mod_map_server <- function(id, layers, filters) {
 
       leaflet::leafletProxy("map") |>
         leaflet::clearGroup("Centroids") |>
+        leaflet::clearMarkerClusters() |>
         leaflet::addCircleMarkers(
           data = dat,
-          radius = 3,
-          fillColor = "black",
-          color = "#ffffff",
+          radius = 2,
+          fillColor = "red",
+          color = "darkred",
           stroke = TRUE,
-          fillOpacity = 1.0,
-          weight = 2,
-          opacity = 1.0,
+          fillOpacity = 0.7,
+          weight = 1,
+          opacity = 0.8,
           group = "Centroids",
+          clusterOptions = leaflet::markerClusterOptions(
+            maxClusterRadius = 40
+          ),
           popup = ~paste0(
             "<b>", airp_id, "</b><br>",
             "Year: ", photo_year, "<br>",

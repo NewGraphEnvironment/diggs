@@ -33,11 +33,14 @@ ui <- bslib::page_sidebar(
 )
 
 server <- function(input, output, session) {
-  # Filter module returns reactive filter values
-  filters <- mod_filters_server("filters", layers)
+  # Reactive for drawn AOI — shared between map and filters
+  drawn_aoi <- shiny::reactiveVal(NULL)
 
-  # Map module returns drawn polygon reactive
-  map_returns <- mod_map_server("map", layers, filters)
+  # Filter module returns reactive filter values
+  filters <- mod_filters_server("filters", layers, drawn_aoi)
+
+  # Map module updates drawn_aoi
+  mod_map_server("map", layers, filters, drawn_aoi)
 
   # Table module displays filtered data
   mod_table_server("table", filters)

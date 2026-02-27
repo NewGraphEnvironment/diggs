@@ -28,19 +28,18 @@ mod_filters_ui <- function(id, layers) {
     shiny::radioButtons(
       ns("aoi_mode"), "AOI Filter",
       choices = c(
-        "None (all centroids)" = "none",
-        "Watershed (raw)" = "raw",
-        "Watershed (buffered)" = "buffered",
-        "Custom (drawn)" = "custom"
+        "All cached" = "none",
+        "Watershed only" = "raw",
+        "Custom (draw on map)" = "custom"
       ),
-      selected = "buffered"
+      selected = "none"
     ),
     shiny::hr(),
     shiny::textOutput(ns("summary"))
   )
 }
 
-mod_filters_server <- function(id, layers) {
+mod_filters_server <- function(id, layers, drawn_aoi = shiny::reactiveVal(NULL)) {
   shiny::moduleServer(id, function(input, output, session) {
 
     centroids <- layers$l_photo_centroids
@@ -56,8 +55,10 @@ mod_filters_server <- function(id, layers) {
         )
 
       # Media filter
-      if (length(input$media) > 0) {
+      if (length(input$media) > 0 && length(input$media) < length(unique(centroids$media))) {
         dat <- dat |> dplyr::filter(media %in% input$media)
+      } else if (length(input$media) == 0) {
+        return(dat[0, ])
       }
 
       # Scale filter
@@ -65,16 +66,15 @@ mod_filters_server <- function(id, layers) {
         dat <- dat |> dplyr::filter(scale == input$scale_filter)
       }
 
-      # AOI spatial filter
+      # AOI spatial filter (data already clipped to buffered AOI at cache time)
       aoi <- switch(input$aoi_mode,
         "raw" = layers$aoi_raw,
-        "buffered" = layers$aoi,
-        "custom" = NULL, # TODO: wire to drawn polygon from map module
+        "custom" = drawn_aoi(),
         "none" = NULL
       )
 
       if (!is.null(aoi)) {
-        dat <- sf::st_intersection(dat, aoi)
+        dat <- suppressWarnings(sf::st_intersection(dat, aoi))
       }
 
       dat
