@@ -14,7 +14,6 @@ library(sf)
 library(dplyr)
 library(purrr)
 library(fwapgr)
-library(rfp)
 library(bcdata)
 library(janitor)
 library(fs)
@@ -59,33 +58,30 @@ aoi_buffered <- validate_geometry(aoi_buffered)
 save_layer(aoi_raw, "aoi_raw")
 save_layer(aoi_buffered, "aoi")
 
-# --- Reference layers ---
+# --- Reference layers (using bcdata directly) ---
 message("Downloading streams...")
-l_streams <- rfp::rfp_bcd_get_data(
-  bcdata_record_id = "whse_basemapping.fwa_stream_networks_sp",
-  col_filter = "watershed_group_code",
-  col_filter_value = "BULK",
-  col_extract = c(
-    "linear_feature_id", "stream_order", "gnis_name",
-    "downstream_route_measure", "blue_line_key", "length_metre"
-  )
-) |>
+l_streams <- bcdata::bcdc_query_geodata("92344413-8035-4c08-b996-65a9b3f62fca") |>
+  bcdata::filter(WATERSHED_GROUP_CODE == "BULK") |>
+  bcdata::select(
+    LINEAR_FEATURE_ID, STREAM_ORDER, GNIS_NAME,
+    DOWNSTREAM_ROUTE_MEASURE, BLUE_LINE_KEY, LENGTH_METRE
+  ) |>
+  bcdata::collect() |>
   sf::st_transform(4326) |>
   janitor::clean_names() |>
   dplyr::filter(stream_order >= 4)
 
 message("Downloading railways...")
-l_rail <- rfp::rfp_bcd_get_data(
-  bcdata_record_id = "whse_basemapping.gba_railway_tracks_sp"
-) |>
+l_rail <- bcdata::bcdc_query_geodata("4ff93cda-9f58-4055-a372-98c22d04a9f8") |>
+  bcdata::collect() |>
   sf::st_transform(4326) |>
   janitor::clean_names()
 
 message("Downloading NTS 50k grid...")
-l_imagery_grid <- rfp::rfp_bcd_get_data(
-  bcdata_record_id = "WHSE_BASEMAPPING.NTS_50K_GRID"
-) |>
-  sf::st_transform(4326)
+l_imagery_grid <- bcdata::bcdc_query_geodata("f9483429-fedd-4704-89b9-49fd098d4bdb") |>
+  bcdata::collect() |>
+  sf::st_transform(4326) |>
+  janitor::clean_names()
 
 # --- Clip reference layers to AOI ---
 message("Clipping layers to AOI...")
@@ -105,12 +101,18 @@ message("Downloading photo centroids by NTS tile...")
 nts_tiles <- layers$l_imagery_grid |>
   dplyr::pull(map_tile)
 
-l_photo_centroids <- rfp::rfp_bcd_get_data(
-  bcdata_record_id = "WHSE_IMAGERY_AND_BASE_MAPS.AIMG_PHOTO_CENTROIDS_SP",
-  col_filter = "nts_tile",
-  col_filter_value = nts_tiles
-) |>
-  sf::st_transform(4326)
+message("NTS tiles: ", paste(nts_tiles, collapse = ", "))
+
+# Query centroids for each NTS tile and combine
+l_photo_centroids <- purrr::map(nts_tiles, \(tile) {
+  message("  Fetching tile: ", tile)
+  bcdata::bcdc_query_geodata("0af7544c-f2ad-4553-bb37-889c94d4c571") |>
+    bcdata::filter(NTS_TILE == !!tile) |>
+    bcdata::collect()
+}) |>
+  dplyr::bind_rows() |>
+  sf::st_transform(4326) |>
+  janitor::clean_names()
 
 l_photo_centroids <- validate_geometry(l_photo_centroids)
 l_photo_centroids <- sf::st_intersection(l_photo_centroids, aoi_buffered)
