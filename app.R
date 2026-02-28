@@ -20,7 +20,10 @@ source("R/mod_table.R")
 layers <- load_cached_layers("data")
 
 ui <- bslib::page_sidebar(
-  title = "airbc",
+  title = tags$a(
+    href = "https://github.com/NewGraphEnvironment/airbc",
+    tags$img(src = "logo.png", height = "46px", style = "margin-top: -8px;")
+  ),
   sidebar = bslib::sidebar(
     width = 300,
     mod_filters_ui("filters", layers)
