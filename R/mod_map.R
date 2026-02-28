@@ -33,15 +33,10 @@ mod_map_server <- function(id, layers, filters, drawn_aoi) {
         leaflet::addPolygons(
           data = layers$aoi,
           color = "yellow", weight = 2, fillOpacity = 0,
-          group = "AOI (buffered)"
-        ) |>
-        leaflet::addPolygons(
-          data = layers$aoi_raw,
-          color = "black", weight = 2, fillOpacity = 0,
-          group = "AOI (raw)"
+          group = "Area of Interest"
         ) |>
         leaflet.extras::addDrawToolbar(
-          targetGroup = "custom_aoi",
+          targetGroup = "Drawn AOI",
           polylineOptions = FALSE,
           circleOptions = FALSE,
           rectangleOptions = FALSE,
@@ -53,11 +48,10 @@ mod_map_server <- function(id, layers, filters, drawn_aoi) {
         ) |>
         leaflet::addLayersControl(
           baseGroups = c("Topo", "ESRI Aerial"),
-          overlayGroups = c("Streams", "Railway", "AOI (buffered)", "AOI (raw)",
-                           "Centroids", "Footprints"),
+          overlayGroups = c("Streams", "Railway", "Area of Interest",
+                           "Centroids", "Custom AOI"),
           options = leaflet::layersControlOptions(collapsed = FALSE)
         ) |>
-        leaflet::hideGroup("Footprints") |>
         leaflet.extras::addFullscreenControl() |>
         leaflet::addScaleBar(position = "bottomleft")
     })
@@ -71,13 +65,30 @@ mod_map_server <- function(id, layers, filters, drawn_aoi) {
       drawn_aoi(NULL)
     })
 
+    # Display uploaded/custom AOI on map
+    shiny::observe({
+      custom <- filters$custom_aoi()
+      leaflet::leafletProxy("map") |>
+        leaflet::clearGroup("Custom AOI")
+
+      if (!is.null(custom)) {
+        leaflet::leafletProxy("map") |>
+          leaflet::addPolygons(
+            data = custom,
+            color = "red", weight = 3, fillOpacity = 0.1,
+            fillColor = "red",
+            group = "Custom AOI"
+          )
+      }
+    })
+
     # Update centroids on map when filters change
     shiny::observe({
       dat <- filters$filtered_data()
       if (is.null(dat) || nrow(dat) == 0) {
         leaflet::leafletProxy("map") |>
           leaflet::clearGroup("Centroids") |>
-          leaflet::clearGroup("Footprints")
+          leaflet::clearMarkerClusters()
         return()
       }
 
@@ -105,7 +116,5 @@ mod_map_server <- function(id, layers, filters, drawn_aoi) {
           )
         )
     })
-
-    list(drawn_aoi = drawn_aoi)
   })
 }
