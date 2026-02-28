@@ -26,9 +26,9 @@ mod_filters_ui <- function(id, layers) {
       selected = ""
     ),
     shiny::radioButtons(
-      ns("aoi_mode"), "AOI Filter",
+      ns("aoi_mode"), "Area of Interest",
       choices = c(
-        "Area of Interest" = "aoi",
+        "Built in" = "aoi",
         "Custom (draw or upload)" = "custom"
       ),
       selected = "aoi"
@@ -39,6 +39,10 @@ mod_filters_ui <- function(id, layers) {
         ns("upload_aoi"), "Upload AOI (geojson or gpkg)",
         accept = c(".geojson", ".gpkg", ".json")
       )
+    ),
+    shiny::actionButton(
+      ns("show_footprints"), "Footprints",
+      class = "btn-sm btn-outline-secondary"
     ),
     shiny::hr(),
     shiny::textOutput(ns("summary"))
@@ -125,7 +129,8 @@ mod_filters_server <- function(id, layers, drawn_aoi = shiny::reactiveVal(NULL))
 
     list(
       filtered_data = filtered_data,
-      custom_aoi = custom_aoi
+      custom_aoi = custom_aoi,
+      show_footprints = shiny::reactive(input$show_footprints)
     )
   })
 }

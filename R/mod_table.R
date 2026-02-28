@@ -8,7 +8,7 @@ mod_table_ui <- function(id) {
 mod_table_server <- function(id, filters) {
   shiny::moduleServer(id, function(input, output, session) {
 
-    output$table <- DT::renderDT({
+    output$table <- DT::renderDT(server = FALSE, {
       dat <- filters$filtered_data()
       if (is.null(dat) || nrow(dat) == 0) return(NULL)
 
@@ -26,10 +26,11 @@ mod_table_server <- function(id, filters) {
         filter = "top",
         extensions = c("Buttons", "ColReorder"),
         options = list(
-          dom = "Bfrtip",
+          dom = "Brtip",
           buttons = c("csv", "excel"),
-          pageLength = 10,
+          pageLength = 5,
           scrollX = TRUE,
+          scrollY = "200px",
           colReorder = TRUE
         ),
         escape = FALSE,
