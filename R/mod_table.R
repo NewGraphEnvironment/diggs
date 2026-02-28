@@ -26,10 +26,11 @@ mod_table_server <- function(id, filters) {
         filter = "top",
         extensions = c("Buttons", "ColReorder"),
         options = list(
-          dom = "Bfrtip",
+          dom = "Brtip",
           buttons = c("csv", "excel"),
-          pageLength = 10,
+          pageLength = 5,
           scrollX = TRUE,
+          scrollY = "200px",
           colReorder = TRUE
         ),
         escape = FALSE,

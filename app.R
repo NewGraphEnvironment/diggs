@@ -25,11 +25,8 @@ ui <- bslib::page_sidebar(
     width = 300,
     mod_filters_ui("filters", layers)
   ),
-  bslib::layout_columns(
-    col_widths = 12,
-    mod_map_ui("map"),
-    mod_table_ui("table")
-  )
+  mod_map_ui("map"),
+  mod_table_ui("table")
 )
 
 server <- function(input, output, session) {

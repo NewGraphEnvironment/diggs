@@ -2,7 +2,7 @@
 
 mod_map_ui <- function(id) {
   ns <- shiny::NS(id)
-  leaflet::leafletOutput(ns("map"), height = "65vh")
+  leaflet::leafletOutput(ns("map"), height = "75vh")
 }
 
 mod_map_server <- function(id, layers, filters, drawn_aoi) {
@@ -115,6 +115,62 @@ mod_map_server <- function(id, layers, filters, drawn_aoi) {
             "Media: ", media
           )
         )
+    })
+
+    # Show footprints on button click (button is in parent app.R sidebar)
+    shiny::observeEvent(filters$show_footprints(), {
+      bounds <- input$map_bounds
+      dat <- filters$filtered_data()
+
+      leaflet::leafletProxy("map") |>
+        leaflet::clearGroup("Footprints")
+
+      if (is.null(bounds) || is.null(dat) || nrow(dat) == 0) return()
+
+      # Clip to current viewport
+      bbox <- sf::st_bbox(c(
+        xmin = bounds$west, ymin = bounds$south,
+        xmax = bounds$east, ymax = bounds$north
+      ), crs = 4326)
+      viewport <- sf::st_as_sfc(bbox)
+      dat_visible <- suppressWarnings(
+        dat[sf::st_intersects(dat, viewport, sparse = FALSE)[, 1], ]
+      )
+
+      if (nrow(dat_visible) == 0) {
+        shiny::showNotification("No centroids in current view", type = "warning")
+        return()
+      }
+
+      if (nrow(dat_visible) > 500) {
+        shiny::showNotification(
+          paste0("Too many points (", nrow(dat_visible), "). Zoom in or filter to < 500."),
+          type = "warning"
+        )
+        return()
+      }
+
+      shiny::withProgress(message = "Computing footprints...", {
+        footprints <- estimate_footprint(dat_visible)
+      })
+
+      leaflet::leafletProxy("map") |>
+        leaflet::showGroup("Footprints") |>
+        leaflet::addPolygons(
+          data = footprints,
+          color = "black", weight = 1, fillOpacity = 0,
+          group = "Footprints",
+          popup = ~paste0(
+            "<b>", airp_id, "</b><br>",
+            "Year: ", photo_year, "<br>",
+            "Scale: ", scale
+          )
+        )
+
+      shiny::showNotification(
+        paste0("Showing ", nrow(dat_visible), " footprints"),
+        type = "message"
+      )
     })
   })
 }
