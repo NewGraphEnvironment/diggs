@@ -28,11 +28,17 @@ mod_filters_ui <- function(id, layers) {
     shiny::radioButtons(
       ns("aoi_mode"), "AOI Filter",
       choices = c(
-        "All cached" = "none",
-        "Watershed only" = "raw",
-        "Custom (draw on map)" = "custom"
+        "Area of Interest" = "aoi",
+        "Custom (draw or upload)" = "custom"
       ),
-      selected = "none"
+      selected = "aoi"
+    ),
+    shiny::conditionalPanel(
+      condition = paste0("input['", ns("aoi_mode"), "'] == 'custom'"),
+      shiny::fileInput(
+        ns("upload_aoi"), "Upload AOI (geojson or gpkg)",
+        accept = c(".geojson", ".gpkg", ".json")
+      )
     ),
     shiny::hr(),
     shiny::textOutput(ns("summary"))
@@ -43,6 +49,37 @@ mod_filters_server <- function(id, layers, drawn_aoi = shiny::reactiveVal(NULL))
   shiny::moduleServer(id, function(input, output, session) {
 
     centroids <- layers$l_photo_centroids
+
+    # Reactive for uploaded AOI polygon
+    uploaded_aoi <- shiny::reactiveVal(NULL)
+
+    shiny::observeEvent(input$upload_aoi, {
+      req(input$upload_aoi)
+      tryCatch({
+        aoi <- sf::st_read(input$upload_aoi$datapath, quiet = TRUE)
+        # Ensure WGS84
+        if (sf::st_crs(aoi)$epsg != 4326) {
+          aoi <- sf::st_transform(aoi, 4326)
+        }
+        aoi <- sf::st_make_valid(aoi)
+        # Union to single polygon if multi-feature
+        aoi <- sf::st_union(aoi) |> sf::st_sf()
+        uploaded_aoi(aoi)
+        shiny::showNotification("AOI uploaded successfully", type = "message")
+      }, error = function(e) {
+        shiny::showNotification(
+          paste("Error reading file:", e$message),
+          type = "error"
+        )
+      })
+    })
+
+    # Combined custom AOI: uploaded takes precedence, then drawn
+    custom_aoi <- shiny::reactive({
+      up <- uploaded_aoi()
+      dr <- drawn_aoi()
+      if (!is.null(up)) up else dr
+    })
 
     filtered_data <- shiny::reactive({
       dat <- centroids
@@ -68,9 +105,8 @@ mod_filters_server <- function(id, layers, drawn_aoi = shiny::reactiveVal(NULL))
 
       # AOI spatial filter (data already clipped to buffered AOI at cache time)
       aoi <- switch(input$aoi_mode,
-        "raw" = layers$aoi_raw,
-        "custom" = drawn_aoi(),
-        "none" = NULL
+        "custom" = custom_aoi(),
+        "aoi" = NULL
       )
 
       if (!is.null(aoi)) {
@@ -87,6 +123,9 @@ mod_filters_server <- function(id, layers, drawn_aoi = shiny::reactiveVal(NULL))
       paste0(n, " photos across ", yrs, " years")
     })
 
-    list(filtered_data = filtered_data)
+    list(
+      filtered_data = filtered_data,
+      custom_aoi = custom_aoi
+    )
   })
 }
