@@ -35,12 +35,16 @@ streams <- flood_query_habitat(conn, "BULK",
   stream_names = c("Bulkley River", "Buck Creek", "Richfield Creek", "Byman Creek")
 )
 
+# Query lake polygons that intersect the rearing streams
+lakes <- flood_query_lakes(conn, streams)
+
 DBI::dbDisconnect(conn)
 
 # --- Trim floodplain ---
 floodplain <- sf::st_read(floodplain_path, quiet = TRUE)
 
 trimmed <- flood_trim_habitat(floodplain, streams,
+  lakes_sf = lakes,
   floodplain_width = 2000,
   photo_buffer = 0          # no capture buffer — just the trimmed floodplain
 )
@@ -59,6 +63,7 @@ photos_60s <- photos |> dplyr::filter(photo_year <= 1969)
 
 # Filter to photos whose centroids are within capture distance
 capture_zone <- flood_trim_habitat(floodplain, streams,
+  lakes_sf = lakes,
   floodplain_width = 2000,
   photo_buffer = 1800
 )

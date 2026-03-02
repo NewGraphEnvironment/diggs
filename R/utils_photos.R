@@ -56,8 +56,9 @@ flood_query_habitat <- function(
   where <- paste(clauses, collapse = "\n      AND ")
 
   sql <- glue::glue("
-    SELECT segmented_stream_id, blue_line_key, gnis_name, stream_order,
-           channel_width, {habitat_col}, access_{species_code},
+    SELECT segmented_stream_id, blue_line_key, waterbody_key,
+           downstream_route_measure, gnis_name,
+           stream_order, channel_width, {habitat_col}, access_{species_code},
            ST_Transform(geom, 4326) as geom
     FROM bcfishpass.streams_vw
     WHERE {where}
@@ -70,13 +71,49 @@ flood_query_habitat <- function(
 }
 
 
+#' Query FWA lake polygons that intersect habitat streams
+#'
+#' Returns lake polygons from whse_basemapping.fwa_lakes_poly that share a
+#' waterbody_key with the input streams. Use with flood_trim_habitat() to fill
+#' gaps where lakes interrupt the stream network.
+#'
+#' @param conn DBI connection to bcfishpass database
+#' @param streams_sf sf linestring — habitat streams (from flood_query_habitat)
+#' @return sf polygon object in WGS84 (EPSG:4326)
+flood_query_lakes <- function(conn, streams_sf) {
+  # Get unique waterbody_keys from streams (non-zero = stream flows through a waterbody)
+  wbkeys <- unique(streams_sf$waterbody_key)
+  wbkeys <- wbkeys[!is.na(wbkeys) & wbkeys != 0]
+
+  if (length(wbkeys) == 0) {
+    message("No waterbody keys found in streams — no lakes to query")
+    return(NULL)
+  }
+
+  wbkey_list <- paste(wbkeys, collapse = ", ")
+  sql <- glue::glue("
+    SELECT waterbody_key, gnis_name_1,
+           ST_Transform(geom, 4326) as geom
+    FROM whse_basemapping.fwa_lakes_poly
+    WHERE waterbody_key IN ({wbkey_list})
+  ")
+
+  result <- sf::st_read(conn, query = sql, quiet = TRUE)
+  message("  ", nrow(result), " lake polygons")
+  result
+}
+
+
 #' Trim floodplain to areas alongside target streams
 #'
 #' Uses flat-cap buffer to extend perpendicular to streams without extending
-#' past stream endpoints. Optionally adds a photo capture buffer.
+#' past stream endpoints. Optionally includes lake polygons to fill gaps where
+#' lakes interrupt the stream network. Optionally adds a photo capture buffer.
 #'
 #' @param floodplain_sf sf polygon — the floodplain/lateral habitat boundary
 #' @param streams_sf sf linestring — pre-filtered streams (from flood_query_habitat or any source)
+#' @param lakes_sf sf polygon — lake polygons to include (from flood_query_lakes or any source).
+#'   Fills gaps where lakes interrupt stream networks. NULL to skip.
 #' @param floodplain_width Buffer distance (m) perpendicular to streams. Should capture
 #'   the full floodplain width. Uses flat end caps.
 #' @param photo_buffer Buffer (m) around trimmed floodplain for photo centroid capture.
@@ -85,6 +122,7 @@ flood_query_habitat <- function(
 flood_trim_habitat <- function(
     floodplain_sf,
     streams_sf,
+    lakes_sf = NULL,
     floodplain_width = 2000,
     photo_buffer = 1800
 ) {
@@ -98,6 +136,16 @@ flood_trim_habitat <- function(
                                     endCapStyle = "FLAT") |>
     sf::st_union() |>
     sf::st_make_valid()
+
+  # Union lake polygons with stream buffer to fill gaps
+  if (!is.null(lakes_sf) && nrow(lakes_sf) > 0) {
+    lakes_albers <- sf::st_transform(lakes_sf, 3005) |>
+      sf::st_union() |>
+      sf::st_make_valid()
+    message("Including ", nrow(lakes_sf), " lake polygons...")
+    streams_buffered <- sf::st_union(streams_buffered, lakes_albers) |>
+      sf::st_make_valid()
+  }
 
   message("Intersecting with floodplain...")
   trimmed <- sf::st_intersection(streams_buffered, floodplain_albers) |>
