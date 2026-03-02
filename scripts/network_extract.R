@@ -15,10 +15,10 @@ library(htmlwidgets)
 
 # --- Boundary points ---
 mouth_blk <- 360873822
-mouth_drm <- 188578
+mouth_drm <- 216733
 
 cutoff_blk <- 360873822
-cutoff_drm <- 229690
+cutoff_drm <- 222000
 
 min_order <- 4
 
@@ -110,6 +110,10 @@ m <- leaflet(network) |>
     popup = ~popup
   )
 
-out <- "data/extract_network.html"
-saveWidget(m, file = normalizePath(out, mustWork = FALSE), selfcontained = TRUE)
-message("\nSaved: ", out)
+out_html <- "data/extract_network.html"
+saveWidget(m, file = normalizePath(out_html, mustWork = FALSE), selfcontained = TRUE)
+message("\nSaved: ", out_html)
+
+out_geojson <- "data/network/network_bulk_richfield_cesford.geojson"
+sf::st_write(network, out_geojson, delete_dsn = TRUE, quiet = TRUE)
+message("Saved: ", out_geojson)
