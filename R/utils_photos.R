@@ -126,6 +126,9 @@ flood_trim_habitat <- function(
     floodplain_width = 2000,
     photo_buffer = 1800
 ) {
+  sf::sf_use_s2(FALSE)
+  on.exit(sf::sf_use_s2(TRUE))
+
   streams_albers <- sf::st_transform(streams_sf, 3005)
   floodplain_albers <- sf::st_transform(floodplain_sf, 3005) |>
     sf::st_union() |>
