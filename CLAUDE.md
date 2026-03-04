@@ -15,10 +15,14 @@ BC Historic Airphoto Explorer — interactive Shiny app for selecting historic o
 - `R/mod_filters.R` — sidebar filter controls (year, media, scale)
 - `R/mod_table.R` — DT table module with CSV/Excel export
 - `R/utils_data.R` — data loading and caching helpers
-- `R/utils_geo.R` — spatial utility functions (footprint estimation, lateral habitat)
+- `R/utils_geo.R` — spatial utility functions (footprint estimation, drawn feature conversion)
+- `R/utils_photos.R` — reusable `flood_*` functions (query habitat, coverage, greedy set-cover selection). Future: extract to `fly` package (#16)
 - `scripts/cache_data.R` — one-time download from BC Data Catalogue; configurable AOI (blk/drm)
-- `scripts/lateral_habitat_to_vector.R` — vectorize lateral habitat rasters
-- `data/` — cached geopackage/parquet layers (gitignored, rebuilt by cache_data.R)
+- `scripts/photos_select_priority.R` — resolution-prioritized photo selection (all best-res + greedy backfill)
+- `scripts/network_extract.R` — FWA stream network extraction between two mainstem DRM points
+- `scripts/explore_stream_network.R` — interactive leaflet map for identifying boundary points (blk/drm)
+- `data-raw/floodplain_neexdzii_co.R` — flooded VCA pipeline for Neexdzii Kwah floodplain delineation
+- `data/` — cached layers (gitignored; geojson, gpkg, tif, csv, html rebuilt by scripts)
 
 ## Lessons Learned
 
@@ -449,11 +453,50 @@ Install: `pak::pak("NewGraphEnvironment/gq")`
 - **`sf_use_s2(FALSE)`** at top of every mapping script
 - **Compute area BEFORE simplify** in SQL
 - **No map title** — title belongs in the report caption
-- **Logo** top-right (tmap) or top-left (mapgl) — bundled in gq at `inst/logo/nge_icon_200.png`
-- **Legend** — suppress auto-legends, build manual ones from registry values
+- **Legend over least-important terrain** — swap legend and logo sides when it reduces AOI occlusion. No fixed convention for which side.
+- **Four-corner rule** — legend, logo, scale bar, keymap each get their own corner. Never stack two in the same quadrant.
+- **Bbox must match canvas aspect ratio** — compute the ratio from geographic extents and page dimensions. Mismatch causes white space bands.
+- **Consistent element-to-frame spacing** — all inset elements should have visually equal margins from the frame edge
+- **Map fills to frame** — basemap extends edge-to-edge, no dead bands. Use near-zero `inner.margins` and `outer.margins`.
+- **Suppress auto-legends** — build manual ones from registry values
 - **ALL CAPS labels appear larger** — use title case for legend labels (gq `gq_tmap_classes()` handles this automatically via `to_title()` fallback)
 
+## Self-Review (after every render)
+
+Read the PNG and check before showing anyone:
+
+1. Correct polygon/study area shown? (verify source data, not just the bbox)
+2. Map fills the page? (no white/black bands)
+3. Keymap inside frame with spacing from edge?
+4. No element overlap? (each in its own corner)
+5. Legend over least-important terrain?
+6. Consistent spacing across all elements?
+7. Scale bar breaks appropriate for extent?
+
 See the `cartography` skill for full reference: basemap blending, BC spatial data queries, label hierarchy, mapgl gotchas, and worked examples.
+
+## Land Cover Change
+
+Use [drift](https://github.com/NewGraphEnvironment/drift) and [flooded](https://github.com/NewGraphEnvironment/flooded) together for riparian land cover change analysis. flooded delineates floodplain extents from DEMs and stream networks; drift tracks what's changing inside them over time.
+
+**Pipeline:**
+
+```r
+# 1. Delineate floodplain AOI (flooded)
+valleys <- flooded::fl_valley_confine(dem, streams)
+
+# 2. Fetch, classify, summarize (drift)
+rasters   <- drift::dft_stac_fetch(aoi, source = "io-lulc", years = c(2017, 2020, 2023))
+classified <- drift::dft_rast_classify(rasters, source = "io-lulc")
+summary    <- drift::dft_rast_summarize(classified, unit = "ha")
+
+# 3. Interactive map with layer toggle
+drift::dft_map_interactive(classified, aoi = aoi)
+```
+
+- Class colors come from drift's shipped class tables (IO LULC, ESA WorldCover)
+- For production COGs on S3, `dft_map_interactive()` serves tiles via titiler — set `options(drift.titiler_url = "...")`
+- See the [drift vignette](https://www.newgraphenvironment.com/drift/articles/neexdzii-kwa.html) for a worked example (Neexdzii Kwa floodplain, 2017-2023)
 
 # Code Check Conventions
 
@@ -915,6 +958,11 @@ Use `--max-turns` to cap iterations and cost.
 Standards for R package development across New Graph Environment repositories.
 Based on [R Packages (2e)](https://r-pkgs.org/) by Hadley Wickham and Jenny Bryan.
 
+**Reference packages:** When starting a new package, study these existing
+packages for patterns: `flooded`, `gq`. They demonstrate the conventions below
+in practice (DESCRIPTION fields, README layout, NEWS.md style, pkgdown setup,
+test structure, hex sticker, etc.).
+
 ## Style
 
 - tidyverse style guide: snake_case, pipe operators (`|>` or `%>%`)
@@ -926,15 +974,91 @@ Based on [R Packages (2e)](https://r-pkgs.org/) by Hadley Wickham and Jenny Brya
 Follow R Packages (2e) conventions:
 - `R/` for functions, `tests/testthat/` for tests, `man/` for docs
 - `DESCRIPTION` with proper fields (Title, Description, Authors@R)
-- `NAMESPACE` managed by roxygen2 (`#' @export`, `#' @importFrom`)
+- `DESCRIPTION` URL field: include both the GitHub repo and the pkgdown site
+  so pkgdown links correctly (e.g., `URL: https://github.com/OWNER/PKG,
+  https://owner.github.io/PKG/`)
+- `NAMESPACE` managed by roxygen2 (`#' @export`, `#' @import`, `#' @importFrom`)
 - Never edit `NAMESPACE` or `man/` by hand
+
+## One Function, One File
+
+Each exported function gets its own R file and its own test file:
+- `R/fl_mask.R` → `tests/testthat/test-fl_mask.R`
+- Commit the function and its tests together
+- Use `Fixes #N` in the commit message to close the corresponding issue
+
+## GitHub Issues and SRED Tracking
+
+### Issue-per-function workflow
+
+File a GitHub issue for each function before building it. This creates a
+traceable record of what was planned, built, and verified.
+
+### Branching for SRED
+
+For new packages or major features, work on a branch and merge via PR:
+
+```
+main ← scaffold-branch (PR closes with "Relates to NewGraphEnvironment/sred-2025-2026#N")
+```
+
+This gives one PR that contains all commits — a single SRED cross-reference
+covers the entire body of work. Individual commits within the branch close
+their respective function issues with `Fixes #N`.
+
+### Closing issues
+
+Close function issues via commit messages (not `gh issue close`) so the
+diff is linked:
+
+```
+Add fl_mask() with threshold and operator support
+
+Fixes #3
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+```
 
 ## Testing
 
 - Use testthat 3e (`Config/testthat/edition: 3` in DESCRIPTION)
 - Run `devtools::test()` before committing
 - Test files mirror source: `R/utils.R` -> `tests/testthat/test-utils.R`
-- Use `testthat::snapshot_test()` for complex outputs
+- Test for edge cases and potential failures, not just happy paths
+- Tests must pass before closing the function's issue
+
+## Examples and Vignettes
+
+### Runnable examples on every exported function
+
+Examples are how users discover what a function does. They must:
+- **Actually run** — no `\dontrun{}` unless external resources are required
+- **Use bundled test data** via `system.file()` so they work for anyone
+- **Show why the function is useful** — not just that it runs, but what it
+  produces and why you'd use it
+- **Use qualified names** for non-exported dependencies (`terra::rast()`,
+  `sf::st_read()`) since examples run in the user's environment
+
+### Vignettes
+
+At least one vignette showing the full pipeline on real data:
+- Demonstrates the package solving an actual problem end-to-end
+- Uses bundled test data (committed to `inst/testdata/`)
+- Hosted on pkgdown so users can read it without installing
+
+### Test data
+
+- Created via a script in `data-raw/` that documents exactly how the data
+  was produced (database queries, spatial crops, etc.)
+- Committed to `inst/testdata/` — small enough to ship with the package
+- Used by tests, examples, and vignettes — one dataset, three purposes
+
+## Documentation
+
+- roxygen2 for all exported functions
+- `@import` or `@importFrom` in the package-level doc (`R/<pkg>-package.R`)
+  to populate NAMESPACE — don't rely on `::` everywhere in function bodies
+- pkgdown site for public packages with `_pkgdown.yml` (bootstrap 5)
+- GitHub Action for pkgdown (`usethis::use_github_action("pkgdown")`)
 
 ## lintr
 
@@ -958,18 +1082,71 @@ exclusions: list(
 - Suppress commented code lints (exploratory R scripts often have commented alternatives)
 - Exclude renv directory entirely
 
-## Documentation
-
-- roxygen2 for all exported functions
-- `@examples` for non-trivial functions
-- Vignettes for workflows, not just API reference
-- `pkgdown` site if the package is public
-
 ## Dependencies
 
 - Minimize Imports — use `Suggests` for packages only needed in tests/vignettes
 - Pin versions only when breaking changes are known
 - Prefer packages already in the tidyverse ecosystem
+
+## Releasing
+
+1. Update `NEWS.md` — keep it concise:
+   - First release: one line (e.g., "Initial release. Brief description.")
+   - Later releases: describe what changed and why, not function-by-function.
+     Link to the pkgdown reference page for details — don't duplicate it.
+   - Don't list every function; the pkgdown reference page is the single
+     source of truth for what's in the package.
+2. Bump version in `DESCRIPTION` (e.g., `0.0.0.9000` → `0.1.0`)
+3. Commit as "Release vX.Y.Z"
+4. Tag: `git tag vX.Y.Z && git push && git push --tags`
+
+## Repository Setup
+
+### Branch protection
+
+Protect main from deletion and force pushes. Admin bypasses so you can
+push directly:
+
+```bash
+gh api repos/OWNER/REPO/rulesets --method POST --input - <<'EOF'
+{
+  "name": "Protect main",
+  "target": "branch",
+  "enforcement": "active",
+  "bypass_actors": [
+    { "actor_id": 5, "actor_type": "RepositoryRole", "bypass_mode": "always" }
+  ],
+  "conditions": { "ref_name": { "include": ["refs/heads/main"], "exclude": [] } },
+  "rules": [ { "type": "deletion" }, { "type": "non_fast_forward" } ]
+}
+EOF
+```
+
+### Scaffold checklist
+
+- `usethis::create_package(".")`
+- `usethis::use_mit_license("New Graph Environment Ltd.")`
+- `usethis::use_testthat(edition = 3)`
+- `usethis::use_pkgdown()`
+- `usethis::use_github_action("pkgdown")`
+- `usethis::use_directory("dev")` — reproducible setup script
+- `usethis::use_directory("data-raw")` — data generation scripts
+- Hex sticker via `hexSticker` (see `data-raw/make_hexsticker.R`)
+- Set GitHub Pages to serve from `gh-pages` branch
+
+### dev/dev.R
+
+Keep a `dev/dev.R` file that documents every setup step. Not idempotent —
+run interactively. This is the reproducible recipe for the package scaffold.
+
+## README
+
+Keep the README lean:
+- Hex sticker, one-line description, install, example showing *why* it's
+  useful
+- Link to pkgdown vignette and function reference — don't duplicate them
+- Don't maintain a function table — it's just another thing to keep updated
+  and pkgdown's reference page is the single source of truth
 
 ## LLM Workflow
 
@@ -1129,6 +1306,7 @@ No other environmental consultancy has this level of integration. This is the in
 | **Infrastructure** | awshak | IaC (OpenTofu), S3, IAM, CORS, OIDC — reproducible cloud environments |
 | **GIS automation** | rfp, ngr, dff-2022 | QGIS project generation, spatial data processing, layer management |
 | **Imagery** | stac_uav, stac_orthophoto_bc | UAV processing, STAC cataloging, containerized pipelines |
+| **Change detection** | drift, flooded | Floodplain delineation, STAC land cover fetch, multi-temporal change analysis |
 | **Citations** | xciter | Pandoc hooks for citations in interactive tables |
 | **Data** | db_newgraph, bcfishpass, fwapg | PostgreSQL spatial databases, modelling, query APIs |
 | **Field collection** | Mergin Maps projects | Mobile forms, offline GeoPackages, bidirectional sync |
