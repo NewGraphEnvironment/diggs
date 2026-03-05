@@ -9,9 +9,7 @@
 
 library(sf)
 library(dplyr)
-
-source("R/utils_geo.R")
-source("R/utils_photos.R")
+library(fly)
 
 # --- Parameters ---
 aoi_path <- "data/floodplain_neexdzii_co_4th_order.gpkg"
@@ -33,22 +31,18 @@ photos_yr <- photos |> dplyr::filter(photo_year == !!photo_year)
 message("Year ", photo_year, ": ", nrow(photos_yr), " photos (",
         paste(sort(unique(photos_yr$scale)), collapse = ", "), ")")
 
-# --- Filter to capture zone ---
-capture_zone <- sf::st_transform(aoi, 3005) |>
-  sf::st_buffer(capture_buffer_m) |>
-  sf::st_transform(4326) |>
-  sf::st_make_valid()
-inside <- sf::st_intersects(photos_yr, capture_zone, sparse = FALSE)[, 1]
-photos_yr <- photos_yr[inside, ]
+# --- Filter to capture zone (footprint method catches edge photos) ---
+photos_yr <- fly_filter(photos_yr, aoi, method = "footprint",
+                        buffer = capture_buffer_m)
 message("In capture zone (", capture_buffer_m, "m buffer): ", nrow(photos_yr), " photos")
 
 # --- Footprint summary ---
 message("\n--- Footprint Summary ---")
-print(flood_photo_summary(photos_yr))
+print(fly_summary(photos_yr))
 
 # --- Coverage by scale ---
 message("\n--- Coverage by Scale ---")
-print(flood_photo_coverage(photos_yr, aoi, by = "scale"))
+print(fly_coverage(photos_yr, aoi, by = "scale"))
 
 # --- Priority selection: all best-resolution, backfill with coarser ---
 message("\n--- Priority Selection ---")
@@ -76,12 +70,12 @@ for (i in seq_along(scales_priority)) {
     # Coarser scales: greedy select to fill remaining uncovered area
     remaining_sf <- sf::st_sf(geometry = sf::st_geometry(remaining_aoi)) |>
       sf::st_transform(4326) |> sf::st_make_valid()
-    sel <- flood_photo_select(photos_sc, remaining_sf, target_coverage = target_coverage)
+    sel <- fly_select(photos_sc, remaining_sf, target_coverage = target_coverage)
   }
 
   if (nrow(sel) > 0) {
     # Update remaining uncovered area
-    fp <- estimate_footprint(sel) |> sf::st_transform(3005)
+    fp <- fly_footprint(sel) |> sf::st_transform(3005)
     fp_union <- sf::st_union(fp) |> sf::st_make_valid()
     remaining_aoi <- tryCatch(
       sf::st_difference(remaining_aoi, fp_union) |> sf::st_make_valid(),

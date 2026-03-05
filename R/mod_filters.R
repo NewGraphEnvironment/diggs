@@ -38,6 +38,12 @@ mod_filters_ui <- function(id, layers) {
       shiny::fileInput(
         ns("upload_aoi"), "Upload AOI (geojson or gpkg)",
         accept = c(".geojson", ".gpkg", ".json")
+      ),
+      shiny::radioButtons(
+        ns("filter_method"), "Filter Method",
+        choices = c("Centroid" = "centroid", "Footprint" = "footprint"),
+        selected = "centroid",
+        inline = TRUE
       )
     ),
     shiny::actionButton(
@@ -114,7 +120,8 @@ mod_filters_server <- function(id, layers, drawn_aoi = shiny::reactiveVal(NULL))
       )
 
       if (!is.null(aoi)) {
-        dat <- suppressWarnings(sf::st_intersection(dat, aoi))
+        method <- input$filter_method %||% "centroid"
+        dat <- fly_filter(dat, aoi, method = method)
       }
 
       dat

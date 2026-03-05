@@ -151,7 +151,7 @@ mod_map_server <- function(id, layers, filters, drawn_aoi) {
       }
 
       shiny::withProgress(message = "Computing footprints...", {
-        footprints <- estimate_footprint(dat_visible)
+        footprints <- fly_footprint(dat_visible)
       })
 
       leaflet::leafletProxy("map") |>
