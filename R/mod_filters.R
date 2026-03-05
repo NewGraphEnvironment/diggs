@@ -26,8 +26,8 @@ mod_filters_ui <- function(id, layers) {
     ),
     shiny::selectInput(
       ns("scale_filter"), "Scale",
-      choices = c("All" = "", scale_values),
-      selected = ""
+      choices = c("All", scale_values),
+      selected = "All"
     ),
     shiny::radioButtons(
       ns("aoi_mode"), "Area of Interest",
@@ -125,7 +125,7 @@ mod_filters_server <- function(id, layers, drawn_aoi = shiny::reactiveVal(NULL))
         return(dat[0, ])
       }
 
-      if (!is.null(input$scale_filter) && input$scale_filter != "") {
+      if (!is.null(input$scale_filter) && input$scale_filter != "All") {
         dat <- dat |> dplyr::filter(scale == input$scale_filter)
       }
 
