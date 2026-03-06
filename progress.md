@@ -30,3 +30,9 @@
 - Tests for utils_geo (drawn_feature_to_sf, validate_geometry) and utils_data (load_cached_layers)
 - 10/10 tests pass
 - Phase 4 COMPLETE (reactive/shinytest2 tests deferred)
+- Reinstalled flooded 0.1.0
+- Created data-raw/vignette_neexdzii.R: full pipeline (bcfishpass query → flooded VCA → geojson)
+- Ran live: 1165 stream segments, 4.6% valley cells, 1 polygon feature
+- End-to-end test: 9388 centroids → 324 in 1968 → 40 within floodplain → CSV exported
+- Scales: 1:12000, 1:31680
+- photo_selection_neexdzii_1968.csv ready for Monday order
