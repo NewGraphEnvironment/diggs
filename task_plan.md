@@ -7,29 +7,29 @@
 ## Phases
 
 ### Phase 1: Rename repo and golem scaffold `done`
-- [ ] Rename `NewGraphEnvironment/airbc` → `NewGraphEnvironment/diggs` on GitHub
-- [ ] Rename local dir `/Users/airvine/Projects/repo/airbc` → `diggs`
-- [ ] Update git remote URL
-- [ ] Create `scaffold` branch
-- [ ] Run golem scaffold in-place (add DESCRIPTION, app_ui/app_server, config)
-- [ ] Verify scaffold runs (`golem::run_dev()`)
+- [x] Rename `NewGraphEnvironment/airbc` → `NewGraphEnvironment/diggs` on GitHub
+- [x] Rename local dir `/Users/airvine/Projects/repo/airbc` → `diggs`
+- [x] Update git remote URL
+- [x] Create `scaffold` branch
+- [x] Run golem scaffold in-place (add DESCRIPTION, app_ui/app_server, config)
+- [x] Verify scaffold runs (`golem::run_dev()`)
 
 ### Phase 2: Port modules and utilities `done`
-- [ ] Copy `mod_map.R`, `mod_filters.R`, `mod_table.R` to `R/`
-- [ ] Copy `utils_data.R`, `utils_geo.R` to `R/`
-- [ ] Wire modules into `app_ui.R` and `app_server.R`
-- [ ] Add fly, sf, leaflet, DT etc. to DESCRIPTION Imports
-- [ ] Move `cache_data.R` to `data-raw/`
-- [ ] Move `floodplain_neexdzii_co.R` to `data-raw/` (project-specific, document as example)
-- [ ] Verify app runs with `golem::run_dev()`
+- [x] Copy `mod_map.R`, `mod_filters.R`, `mod_table.R` to `R/`
+- [x] Copy `utils_data.R`, `utils_geo.R` to `R/`
+- [x] Wire modules into `app_ui.R` and `app_server.R`
+- [x] Add fly, sf, leaflet, DT etc. to DESCRIPTION Imports
+- [x] Move `cache_data.R` to `data-raw/`
+- [x] Move `floodplain_neexdzii_co.R` to `data-raw/` (already there)
+- [x] Verify app runs with `golem::run_dev()`
 
 ### Phase 3: Clean up `in progress`
-- [ ] Remove dead code (validate_geometry duplication, stale references)
-- [ ] Delete scripts/ that are now redundant (photos_select_priority.R — app does this)
-- [ ] Delete explore_stream_network.R, network_extract.R (one-off utilities, not diggs core)
-- [ ] Update .gitignore
-- [ ] Hex sticker
-- [ ] README with diggs branding
+- [x] Remove dead code (validate_geometry duplication — kept in cache_data.R as standalone)
+- [x] Delete scripts/ that are now redundant (photos_select_priority.R — app does this)
+- [x] Delete explore_stream_network.R, network_extract.R (one-off utilities, not diggs core)
+- [x] Update .gitignore
+- [x] Hex sticker
+- [x] README with diggs branding (screenshot placeholder — needs app screenshot)
 - [ ] CLAUDE.md
 
 ### Phase 4: Tests `pending`

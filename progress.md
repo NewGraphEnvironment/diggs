@@ -21,3 +21,6 @@
 - Deleted scripts/ (photos_select_priority.R redundant with app, explore/network one-off)
 - Removed old www/ (logo now in inst/app/www/)
 - Phase 2 COMPLETE
+- Regenerated hex sticker with "diggs" name
+- Wrote README: ecosystem narrative (flooded → diggs → drift), install, quick start, custom AOI
+- Screenshot placeholder — needs app screenshot added to man/figures/screenshot.png

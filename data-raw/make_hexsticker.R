@@ -1,5 +1,4 @@
-# Generate hex sticker for airbc
-# Adapted from NGE package template — hardcoded name since this is a Shiny app, not a package
+# Generate hex sticker for diggs
 
 if (!requireNamespace("pak", quietly = TRUE)) {
   install.packages("pak")
@@ -11,7 +10,7 @@ if (!requireNamespace("hexSticker", quietly = TRUE)) {
 
 library(hexSticker)
 
-package_name <- "airbc"
+package_name <- "diggs"
 
 logo_url <- "https://raw.githubusercontent.com/NewGraphEnvironment/new_graphiti/main/assets/logos/logo_newgraph/WHITE/PNG/nge-icon_white.png"
 logo_file <- "data-raw/nge-icon_white.png"
