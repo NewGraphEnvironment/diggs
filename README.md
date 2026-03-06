@@ -44,10 +44,12 @@ Find `blk` and `drm` for your stream on the [FWA Stream Network map](https://fea
 
 ### Custom AOI
 
-Skip the watershed entirely — switch to **Custom** mode in the app to:
+Within the configured watershed, switch to **Custom** mode to refine your area of interest:
 
 - **Draw** a polygon directly on the map
 - **Upload** a GeoJSON or GeoPackage (e.g. a floodplain polygon from QGIS)
+
+The custom AOI must fall inside the watershed configured at startup — photo centroids are only cached for that region. To work in a different watershed, update `blk`/`drm` in `cache_data.R` and re-run.
 
 ## How It Works
 

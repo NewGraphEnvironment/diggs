@@ -23,14 +23,14 @@
 - [x] Move `floodplain_neexdzii_co.R` to `data-raw/` (already there)
 - [x] Verify app runs with `golem::run_dev()`
 
-### Phase 3: Clean up `in progress`
+### Phase 3: Clean up `done`
 - [x] Remove dead code (validate_geometry duplication — kept in cache_data.R as standalone)
 - [x] Delete scripts/ that are now redundant (photos_select_priority.R — app does this)
 - [x] Delete explore_stream_network.R, network_extract.R (one-off utilities, not diggs core)
 - [x] Update .gitignore
 - [x] Hex sticker
 - [x] README with diggs branding (screenshot placeholder — needs app screenshot)
-- [ ] CLAUDE.md
+- [x] CLAUDE.md
 
 ### Phase 4: Tests `pending`
 - [ ] testthat setup (`usethis::use_testthat(edition = 3)`)
