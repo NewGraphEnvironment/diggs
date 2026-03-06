@@ -24,3 +24,9 @@
 - Regenerated hex sticker with "diggs" name
 - Wrote README: ecosystem narrative (flooded → diggs → drift), install, quick start, custom AOI
 - Screenshot placeholder — needs app screenshot added to man/figures/screenshot.png
+- Updated CLAUDE.md with golem architecture and ecosystem links
+- Phase 3 COMPLETE
+- testthat edition 3 setup
+- Tests for utils_geo (drawn_feature_to_sf, validate_geometry) and utils_data (load_cached_layers)
+- 10/10 tests pass
+- Phase 4 COMPLETE (reactive/shinytest2 tests deferred)

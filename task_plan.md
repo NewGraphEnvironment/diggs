@@ -32,13 +32,13 @@
 - [x] README with diggs branding (screenshot placeholder — needs app screenshot)
 - [x] CLAUDE.md
 
-### Phase 4: Tests `pending`
-- [ ] testthat setup (`usethis::use_testthat(edition = 3)`)
-- [ ] Test filter logic (year, media, scale filtering)
-- [ ] Test fly integration (fly_filter, fly_select called correctly)
-- [ ] Test utils_data (load_cached_layers)
-- [ ] Test utils_geo (drawn_feature_to_sf)
-- [ ] shinytest2 for basic app startup if feasible
+### Phase 4: Tests `done`
+- [x] testthat setup (`usethis::use_testthat(edition = 3)`)
+- [ ] Test filter logic (year, media, scale filtering) — deferred (reactive logic, needs shinytest2)
+- [ ] Test fly integration (fly_filter, fly_select called correctly) — deferred (needs test data)
+- [x] Test utils_data (load_cached_layers)
+- [x] Test utils_geo (drawn_feature_to_sf, validate_geometry)
+- [ ] shinytest2 for basic app startup if feasible — deferred
 
 ### Phase 5: Vignette `pending`
 - [ ] Vignette: configure AOI → cache data → explore → select → export
