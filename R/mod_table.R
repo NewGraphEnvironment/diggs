@@ -1,10 +1,15 @@
-# Table module - DT with CSV/Excel export
-
+#' Table module UI
+#' @param id Module namespace id
+#' @noRd
 mod_table_ui <- function(id) {
   ns <- shiny::NS(id)
   DT::DTOutput(ns("table"))
 }
 
+#' Table module server
+#' @param id Module namespace id
+#' @param filters Return value from mod_filters_server
+#' @noRd
 mod_table_server <- function(id, filters) {
   shiny::moduleServer(id, function(input, output, session) {
 
