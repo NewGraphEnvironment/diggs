@@ -3,9 +3,9 @@
 # cache_data.R
 #
 # One-time script to download and cache reference layers + photo centroids
-# for the airbc Shiny app. Run this before launching the app.
+# for the diggs Shiny app. Run this before launching the app.
 #
-# Usage: Rscript scripts/cache_data.R
+# Usage: Rscript data-raw/cache_data.R
 #
 # Parameters are set for the Neexdzii Kwah (Upper Bulkley) watershed.
 # Adjust blk/drm to target a different watershed.

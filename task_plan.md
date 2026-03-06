@@ -6,7 +6,7 @@
 
 ## Phases
 
-### Phase 1: Rename repo and golem scaffold `pending`
+### Phase 1: Rename repo and golem scaffold `done`
 - [ ] Rename `NewGraphEnvironment/airbc` → `NewGraphEnvironment/diggs` on GitHub
 - [ ] Rename local dir `/Users/airvine/Projects/repo/airbc` → `diggs`
 - [ ] Update git remote URL
@@ -14,7 +14,7 @@
 - [ ] Run golem scaffold in-place (add DESCRIPTION, app_ui/app_server, config)
 - [ ] Verify scaffold runs (`golem::run_dev()`)
 
-### Phase 2: Port modules and utilities `pending`
+### Phase 2: Port modules and utilities `done`
 - [ ] Copy `mod_map.R`, `mod_filters.R`, `mod_table.R` to `R/`
 - [ ] Copy `utils_data.R`, `utils_geo.R` to `R/`
 - [ ] Wire modules into `app_ui.R` and `app_server.R`
@@ -23,7 +23,7 @@
 - [ ] Move `floodplain_neexdzii_co.R` to `data-raw/` (project-specific, document as example)
 - [ ] Verify app runs with `golem::run_dev()`
 
-### Phase 3: Clean up `pending`
+### Phase 3: Clean up `in progress`
 - [ ] Remove dead code (validate_geometry duplication, stale references)
 - [ ] Delete scripts/ that are now redundant (photos_select_priority.R — app does this)
 - [ ] Delete explore_stream_network.R, network_extract.R (one-off utilities, not diggs core)

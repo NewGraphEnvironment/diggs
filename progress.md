@@ -17,3 +17,7 @@
 - Smoke test passes: package loads, config resolves, all 8 layers load
 - Phase 1 COMPLETE
 - Phase 2 mostly done (modules already in R/, wired up via golem)
+- Moved cache_data.R to data-raw/
+- Deleted scripts/ (photos_select_priority.R redundant with app, explore/network one-off)
+- Removed old www/ (logo now in inst/app/www/)
+- Phase 2 COMPLETE
