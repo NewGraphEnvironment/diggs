@@ -1,6 +1,6 @@
 Package: diggs
 Title: Delineation-Informed Geographic Ground Selection
-Version: 0.0.0.9000
+Version: 0.1.0
 Authors@R: c(
     person("Al", "Irvine", email = "al@newgraphenvironment.com",
            role = c("aut", "cre")),
@@ -11,7 +11,8 @@ Description: Interactive Shiny app for selecting historic orthophoto imagery
     by year/media/scale, view estimated photo footprints, and export
     selections to CSV. Built on the fly package for spatial photo operations.
 License: MIT + file LICENSE
-URL: https://github.com/NewGraphEnvironment/diggs
+URL: https://github.com/NewGraphEnvironment/diggs,
+    https://newgraphenvironment.github.io/diggs/
 BugReports: https://github.com/NewGraphEnvironment/diggs/issues
 Depends:
     R (>= 4.1)
