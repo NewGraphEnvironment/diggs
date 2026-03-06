@@ -21,3 +21,4 @@ data/network/
 # OS
 .DS_Store
 
+inst/doc

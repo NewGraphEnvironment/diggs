@@ -40,13 +40,13 @@
 - [x] Test utils_geo (drawn_feature_to_sf, validate_geometry)
 - [ ] shinytest2 for basic app startup if feasible — deferred
 
-### Phase 5: Vignette `in progress`
+### Phase 5: Vignette `done`
 - [x] Reinstall flooded from source (0.1.0)
 - [x] `data-raw/vignette_neexdzii.R` — hit bcfishpass for network, run flooded VCA
 - [x] Cache floodplain AOI as geojson (1 polygon, 4.6% of DEM extent)
 - [x] Confirm app runs end-to-end: 40 photos (1968, 1:12000 + 1:31680) → CSV
-- [ ] Write vignette .Rmd documenting the workflow
-- [ ] Document two-tier AOI concept (watershed window vs floodplain refinement)
+- [x] Write vignette .Rmd documenting the workflow
+- [x] Document two-tier AOI concept (watershed window vs floodplain refinement)
 
 ### Phase 6: PR and release `pending`
 - [ ] Commit all on scaffold branch

@@ -36,3 +36,5 @@
 - End-to-end test: 9388 centroids → 324 in 1968 → 40 within floodplain → CSV exported
 - Scales: 1:12000, 1:31680
 - photo_selection_neexdzii_1968.csv ready for Monday order
+- Wrote vignette: neexdzii-kwah-1968.Rmd (two-tier AOI, flooded pipeline, selection results, ecosystem table)
+- Phase 5 COMPLETE
