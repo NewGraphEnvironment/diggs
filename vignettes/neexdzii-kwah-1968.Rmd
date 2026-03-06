@@ -162,6 +162,59 @@ table(sel$scale)
 #     130     128
 ```
 
+## Coverage target: 95% saves 101 photos
+
+The priority selection algorithm picks all finest-scale photos first, then
+backfills remaining AOI gaps with coarser scales. The last few percent of
+coverage is expensive — it requires many coarse photos to fill tiny gaps:
+
+| Target | Photos | Coverage | 1:12,000 | 1:31,680 |
+|--------|--------|----------|----------|----------|
+| 100% | 249 | 100.0% | 130 | 119 |
+| **95%** | **148** | **97.7%** | **130** | **18** |
+| 90% | 144 | 94.3% | 130 | 14 |
+| 85% | 142 | 91.8% | 130 | 12 |
+
+Dropping from 100% to 95% target cuts **101 photos** — all from the coarser
+1:31,680 scale. The 130 priority 1:12,000 photos are untouched. The last 5%
+of AOI coverage requires 101 additional coarse-scale photos to fill tiny gaps
+between the fine-scale footprints.
+
+diggs defaults to 95% for this reason. You can adjust the slider in the app
+to trade off between completeness and cost.
+
+## Pruning floodplain fragments
+
+The VCA produces 288 polygon fragments, but most are tiny artifacts on upper
+tributaries — 214 are under 1 ha. These isolated pockets on streams like Foxy
+Creek and upper Crow Creek expand the analysis extent for negligible floodplain
+area. Dropping fragments under 10 ha removes 261 of 288 polygons while only
+reducing the photo selection from 258 to 241:
+
+| Min area filter | Polygons kept | Photos selected | Photos dropped |
+|----------------|---------------|-----------------|----------------|
+| None (raw) | 288 | 258 | — |
+| >= 1 ha | 74 | 249 | 9 |
+| >= 5 ha | 45 | 244 | 14 |
+| >= 10 ha | 27 | 241 | 17 |
+| >= 50 ha | 15 | 236 | 22 |
+
+The dropped photos all land on the periphery — the core riverscape coverage
+stays intact. The footprint method insulates against most of the fragment noise,
+but pruning still trims unnecessary edge coverage that inflates ordering costs.
+
+```{r pruned-map, eval=TRUE, echo=FALSE, out.width="100%", fig.cap="Purple: floodplain >= 10 ha (27 polys). Orange: fragments < 10 ha (261 polys). Blue: kept photos (241). Red: dropped photos (17). Grey: footprints for kept set."}
+knitr::include_graphics("../man/figures/pruned-vs-raw.png")
+```
+
+This pruning is a stopgap — a simple area threshold doesn't account for network
+position. A fragment between two large floodplain polygons should be kept
+regardless of size, while an isolated pocket on upper Foxy Creek should be
+dropped even if it's 15 ha. Network-aware pruning is planned for
+[fresh](https://github.com/NewGraphEnvironment/sred-2025-2026/issues/18)
+(FWA-Referenced Spatial Hydrology), which will snap polygons to the stream
+network and prune based on connectivity rather than area alone.
+
 ## What comes next
 
 Order the photos from the

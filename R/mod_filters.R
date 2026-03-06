@@ -66,7 +66,7 @@ mod_filters_ui <- function(id, layers) {
     ),
     shiny::sliderInput(
       ns("target_aoi_coverage"), "Target AOI Coverage (%)",
-      min = 0, max = 100, value = 100, step = 5,
+      min = 0, max = 100, value = 95, step = 5,
       post = "%"
     ),
     shiny::actionButton(
