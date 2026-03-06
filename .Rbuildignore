@@ -1,0 +1,9 @@
+^doc$
+^Meta$
+^task_plan\.md$
+^progress\.md$
+^findings\.md$
+^CLAUDE\.md$
+^\.claude$
+^data-raw$
+^dev$

@@ -37,4 +37,10 @@
 - Scales: 1:12000, 1:31680
 - photo_selection_neexdzii_1968.csv ready for Monday order
 - Wrote vignette: neexdzii-kwah-1968.Rmd (two-tier AOI, flooded pipeline, selection results, ecosystem table)
+- KEY INSIGHT: footprint filtering finds 258 photos vs 40 by centroid (85% missed)
+- Floodplains are narrow linear features — most photo centres land outside
+- Generated static comparison map (man/figures/centroid-vs-footprint.png)
+- Re-ran selection with footprint method: 130 at 1:12000, 128 at 1:31680
+- Filed issue #20: gap-filling between patchy floodplain polygons (future fresh work)
+- Updated sred#18: rewritten as fresh (FWA-Referenced Spatial Hydrology) with full scope
 - Phase 5 COMPLETE

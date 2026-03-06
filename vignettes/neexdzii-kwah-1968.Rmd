@@ -100,6 +100,30 @@ source("data-raw/cache_data.R")
 # Caches 9,388 photo centroids (1963-2019), streams, railways, NTS grid
 ```
 
+## Why footprint filtering matters
+
+Floodplains are narrow linear features. A photo centroid can land outside the
+floodplain while the actual photo coverage — the footprint — extends across it.
+This is the difference between `fly_filter(method = "centroid")` and
+`fly_filter(method = "footprint")`:
+
+| Method | 1968 photos found | What it checks |
+|--------|-------------------|----------------|
+| Centroid | 40 | Centre point falls inside AOI |
+| Footprint | 258 | Estimated photo rectangle overlaps AOI |
+
+**Centroid filtering misses 85% of the useful photos.** The 218 "extra" photos
+have centres outside the floodplain but their coverage extends across it —
+exactly the photos you need for edge-to-edge coverage of a narrow valley bottom.
+
+The interactive map below shows this visually. Blue dots are centroids that land
+inside the floodplain. Red dots are centroids outside it whose footprints (grey
+rectangles) still overlap. The purple polygon is the modelled floodplain.
+
+```{r footprint-map, eval=TRUE, echo=FALSE, out.width="100%", fig.cap="Blue: centroids inside floodplain (40). Red: centroids outside whose footprints overlap (218). Purple: modelled floodplain. Grey: estimated photo footprints."}
+knitr::include_graphics("../man/figures/centroid-vs-footprint.png")
+```
+
 ## Step 3: Launch diggs and select photos
 
 ```{r launch}
@@ -110,29 +134,32 @@ In the app:
 
 1. Switch AOI mode to **Custom (draw or upload)**
 2. Upload `data/floodplain_neexdzii_co_4th_order.geojson`
-3. Set year range to **1968--1968**
-4. Click **Select** to run resolution-prioritized selection
-5. Click **Download CSV** to export
+3. Set **Filter Method** to **Footprint**
+4. Set year range to **1968--1968**
+5. Click **Select** to run resolution-prioritized selection
+6. Click **Download CSV** to export
 
 ## Step 4: What we got
 
-The selection returned **40 photos** at two scales:
+Using footprint filtering, the selection returned **258 photos** at two scales:
 
 | Scale | Photos | Resolution |
 |-------|--------|------------|
-| 1:12,000 | 32 | High — individual trees visible |
-| 1:31,680 | 8 | Medium — land cover classes distinguishable |
+| 1:12,000 | 130 | High — individual trees visible |
+| 1:31,680 | 128 | Medium — land cover classes distinguishable |
 
-The 1:12,000 photos are the priority — they cover most of the floodplain at
-a resolution where you can identify cottonwood stands, wetland boundaries,
-and channel morphology. The 1:31,680 photos fill gaps where finer-scale
-coverage doesn't exist.
+Compare this to centroid-only filtering which would have returned just 40 photos
+(32 + 8) — missing most of the floodplain coverage.
+
+The 1:12,000 photos are the priority — at this scale you can identify cottonwood
+stands, wetland boundaries, side channel morphology, and agricultural clearing
+patterns. The 1:31,680 photos provide context and fill gaps.
 
 ```{r results}
 sel <- read.csv("data/photo_selection_neexdzii_1968.csv")
 table(sel$scale)
 # 1:12000 1:31680
-#      32       8
+#     130     128
 ```
 
 ## What comes next

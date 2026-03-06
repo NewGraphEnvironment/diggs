@@ -22,3 +22,5 @@ data/network/
 .DS_Store
 
 inst/doc
+/doc/
+/Meta/
