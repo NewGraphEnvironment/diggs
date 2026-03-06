@@ -1,5 +1,7 @@
-# Filter module - sidebar controls and reactive filtered dataset
-
+#' Filter module UI
+#' @param id Module namespace id
+#' @param layers Named list of sf layers from load_cached_layers
+#' @noRd
 mod_filters_ui <- function(id, layers) {
   ns <- shiny::NS(id)
 
@@ -26,8 +28,8 @@ mod_filters_ui <- function(id, layers) {
     ),
     shiny::selectInput(
       ns("scale_filter"), "Scale",
-      choices = c("All" = "", scale_values),
-      selected = ""
+      choices = c("All", scale_values),
+      selected = "All"
     ),
     shiny::radioButtons(
       ns("aoi_mode"), "Area of Interest",
@@ -64,7 +66,7 @@ mod_filters_ui <- function(id, layers) {
     ),
     shiny::sliderInput(
       ns("target_aoi_coverage"), "Target AOI Coverage (%)",
-      min = 0, max = 100, value = 100, step = 5,
+      min = 0, max = 100, value = 95, step = 5,
       post = "%"
     ),
     shiny::actionButton(
@@ -76,6 +78,11 @@ mod_filters_ui <- function(id, layers) {
   )
 }
 
+#' Filter module server
+#' @param id Module namespace id
+#' @param layers Named list of sf layers from load_cached_layers
+#' @param drawn_aoi ReactiveVal for drawn AOI polygon
+#' @noRd
 mod_filters_server <- function(id, layers, drawn_aoi = shiny::reactiveVal(NULL)) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
@@ -125,7 +132,7 @@ mod_filters_server <- function(id, layers, drawn_aoi = shiny::reactiveVal(NULL))
         return(dat[0, ])
       }
 
-      if (!is.null(input$scale_filter) && input$scale_filter != "") {
+      if (!is.null(input$scale_filter) && input$scale_filter != "All") {
         dat <- dat |> dplyr::filter(scale == input$scale_filter)
       }
 
@@ -136,7 +143,7 @@ mod_filters_server <- function(id, layers, drawn_aoi = shiny::reactiveVal(NULL))
 
       if (!is.null(aoi)) {
         method <- input$filter_method %||% "centroid"
-        dat <- fly_filter(dat, aoi, method = method)
+        dat <- fly::fly_filter(dat, aoi, method = method)
       }
 
       dat
@@ -179,17 +186,17 @@ mod_filters_server <- function(id, layers, drawn_aoi = shiny::reactiveVal(NULL))
             sf::st_transform(4326) |> sf::st_make_valid()
 
           if (target >= 1) {
-            sel <- fly_select(photos_sc, remaining_sf, mode = "all")
+            sel <- fly::fly_select(photos_sc, remaining_sf, mode = "all")
           } else if (i == 1) {
-            sel <- fly_select(photos_sc, remaining_sf, mode = "all")
+            sel <- fly::fly_select(photos_sc, remaining_sf, mode = "all")
           } else {
-            sel <- fly_select(photos_sc, remaining_sf,
+            sel <- fly::fly_select(photos_sc, remaining_sf,
                               mode = "minimal", target_coverage = target)
           }
 
           if (nrow(sel) == 0) next
 
-          fp <- fly_footprint(sel) |> sf::st_transform(3005)
+          fp <- fly::fly_footprint(sel) |> sf::st_transform(3005)
           fp_union <- sf::st_union(fp) |> sf::st_make_valid()
           remaining_aoi <- tryCatch(
             sf::st_difference(remaining_aoi, fp_union) |> sf::st_make_valid(),

@@ -1,10 +1,17 @@
-# Map module - leaflet with draw toolbar and reference layers
-
+#' Map module UI
+#' @param id Module namespace id
+#' @noRd
 mod_map_ui <- function(id) {
   ns <- shiny::NS(id)
   leaflet::leafletOutput(ns("map"), height = "75vh")
 }
 
+#' Map module server
+#' @param id Module namespace id
+#' @param layers Named list of sf layers from load_cached_layers
+#' @param filters Return value from mod_filters_server
+#' @param drawn_aoi ReactiveVal for drawn AOI polygon
+#' @noRd
 mod_map_server <- function(id, layers, filters, drawn_aoi) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
@@ -151,7 +158,7 @@ mod_map_server <- function(id, layers, filters, drawn_aoi) {
       }
 
       shiny::withProgress(message = "Computing footprints...", {
-        footprints <- fly_footprint(dat_visible)
+        footprints <- fly::fly_footprint(dat_visible)
       })
 
       leaflet::leafletProxy("map") |>

@@ -2,6 +2,7 @@
 #'
 #' @param data_dir Path to directory containing .geojson files
 #' @return Named list of sf objects
+#' @noRd
 load_cached_layers <- function(data_dir = "data") {
   layers_to_load <- fs::dir_ls(data_dir, glob = "*.geojson")
 

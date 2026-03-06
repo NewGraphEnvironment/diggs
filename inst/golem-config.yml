@@ -1,0 +1,9 @@
+default:
+  golem_name: diggs
+  golem_version: 0.0.0.9000
+  app_prod: no
+  data_dir: data
+
+production:
+  app_prod: yes
+  data_dir: data
