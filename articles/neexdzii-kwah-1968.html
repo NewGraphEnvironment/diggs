@@ -88,8 +88,8 @@ floodplain delineated by <a href="https://github.com/NewGraphEnvironment/flooded
 <p>The watershed window is broad (you only run it once). The floodplain
 refinement is precise (you iterate on it as your analysis evolves).</p>
 </div>
-<div class="section level2">
-<h2 id="step-1-delineate-the-floodplain">Step 1: Delineate the floodplain<a class="anchor" aria-label="anchor" href="#step-1-delineate-the-floodplain"></a>
+<div class="section level2 unnumbered">
+<h2 class="unnumbered" id="delineate-the-floodplain">Delineate the floodplain<a class="anchor" aria-label="anchor" href="#delineate-the-floodplain"></a>
 </h2>
 <p>The floodplain AOI comes from <a href="https://www.newgraphenvironment.com/flooded/reference/fl_valley_confine.html" class="external-link"><code>flooded::fl_valley_confine()</code></a>
 — a valley confinement algorithm that uses a DEM, slope raster, stream
@@ -133,8 +133,8 @@ pipeline:</p>
 <p>This produces a single polygon covering 123.5 km<sup>2</sup> of
 modelled floodplain along 4th+ order coho streams.</p>
 </div>
-<div class="section level2">
-<h2 id="step-2-cache-the-watershed-data">Step 2: Cache the watershed data<a class="anchor" aria-label="anchor" href="#step-2-cache-the-watershed-data"></a>
+<div class="section level2 unnumbered">
+<h2 class="unnumbered" id="cache-the-watershed-data">Cache the watershed data<a class="anchor" aria-label="anchor" href="#cache-the-watershed-data"></a>
 </h2>
 <p>Before launching diggs, run <code>data-raw/cache_data.R</code> to
 download reference layers and photo centroids from the BC Data
@@ -178,20 +178,19 @@ and <a href="https://www.newgraphenvironment.com/fly/reference/fly_filter.html" 
 The 218 “extra” photos have centres outside the floodplain but their
 coverage extends across it — exactly the photos you need for
 edge-to-edge coverage of a narrow valley bottom.</p>
-<p>The map below shows this visually. Blue dots are centroids that land
-inside the floodplain. Red dots are centroids outside it whose
-footprints (grey rectangles) still overlap. The purple polygon is the
-modelled floodplain.</p>
+<p>Figure @ref(fig:footprint-map) shows this visually. Blue dots are
+centroids that land inside the floodplain. Red dots are centroids
+outside it whose footprints (grey rectangles) still overlap.</p>
 <div class="figure">
-<img src="../reference/figures/centroid-vs-footprint.png" class="r-plt" alt="Blue: centroids inside floodplain (40). Red: centroids outside whose footprints overlap (218). Purple: modelled floodplain. Grey: estimated photo footprints." width="100%"><p class="caption">
-Blue: centroids inside floodplain (40). Red: centroids outside whose
-footprints overlap (218). Purple: modelled floodplain. Grey: estimated
-photo footprints.
+<img src="../reference/figures/centroid-vs-footprint.png" class="r-plt" alt="Centroid vs footprint filtering. Blue: centroids inside floodplain (40). Red: centroids outside whose footprints overlap (218). Purple: modelled floodplain. Grey: estimated photo footprints." width="100%"><p class="caption">
+Centroid vs footprint filtering. Blue: centroids inside floodplain (40).
+Red: centroids outside whose footprints overlap (218). Purple: modelled
+floodplain. Grey: estimated photo footprints.
 </p>
 </div>
 </div>
-<div class="section level2">
-<h2 id="step-3-launch-diggs-and-select-photos">Step 3: Launch diggs and select photos<a class="anchor" aria-label="anchor" href="#step-3-launch-diggs-and-select-photos"></a>
+<div class="section level2 unnumbered">
+<h2 class="unnumbered" id="launch-diggs-and-select-photos">Launch diggs and select photos<a class="anchor" aria-label="anchor" href="#launch-diggs-and-select-photos"></a>
 </h2>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">diggs</span><span class="fu">::</span><span class="fu"><a href="../reference/run_app.html">run_app</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
@@ -213,13 +212,14 @@ selection</li>
 </ol>
 </div>
 <div class="section level2">
-<h2 id="step-4-what-we-got">Step 4: What we got<a class="anchor" aria-label="anchor" href="#step-4-what-we-got"></a>
+<h2 id="coverage-target-and-component-coverage">Coverage target and component coverage<a class="anchor" aria-label="anchor" href="#coverage-target-and-component-coverage"></a>
 </h2>
 <p>Footprint filtering finds <strong>258 photos</strong> whose coverage
-overlaps the floodplain (vs just 40 by centroid — see above). The
-priority selection algorithm then picks which of those 258 to actually
-order: all finest-scale photos first, then backfilling remaining AOI
-gaps with coarser scales until the coverage target is met.</p>
+overlaps the floodplain (vs just 40 by centroid — see Figure
+@ref(fig:footprint-map)). The priority selection algorithm then picks
+which of those 258 to actually order: all finest-scale photos first,
+then backfilling remaining AOI gaps with coarser scales until the
+coverage target is met.</p>
 <p>At the default <strong>95% coverage target</strong>, the selection
 returns <strong>148 photos</strong>:</p>
 <table class="table">
@@ -250,13 +250,10 @@ to reach 97.7% AOI coverage.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">sel</span><span class="op">$</span><span class="va">scale</span><span class="op">)</span></span>
 <span><span class="co"># 1:12000 1:31680</span></span>
 <span><span class="co">#     130      18</span></span></code></pre></div>
-</div>
-<div class="section level2">
-<h2 id="why-not-100-coverage">Why not 100% coverage?<a class="anchor" aria-label="anchor" href="#why-not-100-coverage"></a>
-</h2>
 <p>The last few percent of coverage is expensive. Pushing from 95% to
-100% requires <strong>101 additional coarse-scale photos</strong> to
-fill tiny gaps between the fine-scale footprints:</p>
+100% requires <strong>101 additional coarse-scale photos</strong> — all
+1:31,680 — to fill tiny gaps between the fine-scale footprints. The 130
+priority 1:12,000 photos are the same at every target:</p>
 <table class="table">
 <thead><tr class="header">
 <th>Target</th>
@@ -296,21 +293,22 @@ fill tiny gaps between the fine-scale footprints:</p>
 </tr>
 </tbody>
 </table>
-<p>The 130 priority 1:12,000 photos are the same at every target — only
-the coarse-scale backfill changes. At 100%, you need 119 coarse photos;
-at 95%, just 18. All 101 dropped photos are 1:31,680 — the fine-scale
-set is completely untouched. The 2.3% of uncovered AOI consists of thin
-slivers between fine-scale footprints that are unlikely to contain
-information not already captured by adjacent photos.</p>
+<p>However, the 95% target optimizes total area and can leave entire
+stream reaches uncovered — Buck Creek’s floodplain segments are small
+relative to the total AOI, so the algorithm skips them. Enable
+<strong>Ensure all AOI components covered</strong> to guarantee at least
+one photo on every disconnected floodplain polygon before optimizing for
+area. This adds ~25 photos (173 vs 148) but plugs the blind spots — far
+cheaper than pushing to 100% (249 photos). Figure
+@ref(fig:ensure-components) shows the result.</p>
 <div class="figure">
-<img src="../reference/figures/coverage-95-vs-100.png" class="r-plt" alt="Blue: kept 1:12,000 photos (130). Green: kept 1:31,680 photos (18). Red: dropped 1:31,680 photos (101). Purple: modelled floodplain. All dropped photos are coarse-scale — the fine-scale set is untouched." width="100%"><p class="caption">
-Blue: kept 1:12,000 photos (130). Green: kept 1:31,680 photos (18). Red:
-dropped 1:31,680 photos (101). Purple: modelled floodplain. All dropped
-photos are coarse-scale — the fine-scale set is untouched.
+<img src="../reference/figures/ensure-components.png" class="r-plt" alt="With component coverage enabled: 173 photos at 99.4% coverage. Blue footprints are selected, grey are unselected. Every floodplain polygon has at least one photo — no blind spots on Buck Creek or other isolated segments." width="100%"><p class="caption">
+With component coverage enabled: 173 photos at 99.4% coverage. Blue
+footprints are selected, grey are unselected. Every floodplain polygon
+has at least one photo — no blind spots on Buck Creek or other isolated
+segments.
 </p>
 </div>
-<p>diggs defaults to 95% for this reason. You can adjust the slider in
-the app to trade off between completeness and cost.</p>
 </div>
 <div class="section level2">
 <h2 id="pruning-floodplain-fragments">Pruning floodplain fragments<a class="anchor" aria-label="anchor" href="#pruning-floodplain-fragments"></a>
@@ -363,22 +361,22 @@ reducing the selection from 148 to 141:</p>
 </table>
 <p>The 95% target already handles most edge trimming — fragment pruning
 complements it but doesn’t stack dramatically. The dropped photos all
-land on the periphery; the core riverscape coverage stays intact.</p>
+land on the periphery; the core riverscape coverage stays intact (Figure
+@ref(fig:pruned-map)).</p>
 <div class="figure">
-<img src="../reference/figures/pruned-vs-raw.png" class="r-plt" alt="At 95% coverage target: purple = floodplain &gt;= 10 ha (27 polys), orange = fragments &lt; 10 ha (261 polys), blue = kept photos (141), red = dropped photos (9), grey = footprints for kept set." width="100%"><p class="caption">
-At 95% coverage target: purple = floodplain &gt;= 10 ha (27 polys),
-orange = fragments &lt; 10 ha (261 polys), blue = kept photos (141), red
-= dropped photos (9), grey = footprints for kept set.
+<img src="../reference/figures/pruned-vs-raw.png" class="r-plt" alt="Fragment pruning at 95% coverage target. Purple: floodplain &gt;= 10 ha (27 polys). Orange: fragments &lt; 10 ha (261 polys). Blue: kept photos (141). Red: dropped photos (9). Grey: footprints for kept set." width="100%"><p class="caption">
+Fragment pruning at 95% coverage target. Purple: floodplain &gt;= 10 ha
+(27 polys). Orange: fragments &lt; 10 ha (261 polys). Blue: kept photos
+(141). Red: dropped photos (9). Grey: footprints for kept set.
 </p>
 </div>
 <p>This pruning is a stopgap — a simple area threshold doesn’t account
 for network position. A fragment between two large floodplain polygons
 should be kept regardless of size, while an isolated pocket on upper
 Foxy Creek should be dropped even if it’s 15 ha. Network-aware pruning
-is planned for <a href="https://github.com/NewGraphEnvironment/sred-2025-2026/issues/18" class="external-link">fresh</a>
-(FWA-Referenced Spatial Hydrology), which will snap polygons to the
-stream network and prune based on connectivity rather than area
-alone.</p>
+that snaps polygons to the stream network and prunes based on
+connectivity rather than area alone would be a more principled
+approach.</p>
 </div>
 <div class="section level2">
 <h2 id="what-comes-next">What comes next<a class="anchor" aria-label="anchor" href="#what-comes-next"></a>
