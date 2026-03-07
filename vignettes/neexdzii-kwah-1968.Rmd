@@ -1,6 +1,6 @@
 ---
 title: "Selecting 1968 Airphotos for the Neexdzii Kwah Floodplain"
-output: rmarkdown::html_vignette
+output: bookdown::html_document2
 vignette: >
   %\VignetteIndexEntry{Selecting 1968 Airphotos for the Neexdzii Kwah Floodplain}
   %\VignetteEngine{knitr::rmarkdown}
@@ -39,7 +39,7 @@ diggs uses a two-tier area of interest:
 The watershed window is broad (you only run it once). The floodplain refinement
 is precise (you iterate on it as your analysis evolves).
 
-## Step 1: Delineate the floodplain
+## Delineate the floodplain {-}
 
 The floodplain AOI comes from [`flooded::fl_valley_confine()`](https://www.newgraphenvironment.com/flooded/reference/fl_valley_confine.html) — a valley
 confinement algorithm that uses a DEM, slope raster, stream network, and
@@ -85,7 +85,7 @@ sf::st_write(sf::st_transform(valleys_poly, 4326),
 This produces a single polygon covering 123.5 km^2^ of modelled floodplain
 along 4th+ order coho streams.
 
-## Step 2: Cache the watershed data
+## Cache the watershed data {-}
 
 Before launching diggs, run `data-raw/cache_data.R` to download reference
 layers and photo centroids from the BC Data Catalogue. The script is
@@ -116,15 +116,15 @@ This is the difference between [`fly_filter(method = "centroid")`](https://www.n
 have centres outside the floodplain but their coverage extends across it —
 exactly the photos you need for edge-to-edge coverage of a narrow valley bottom.
 
-The map below shows this visually. Blue dots are centroids that land inside the
-floodplain. Red dots are centroids outside it whose footprints (grey rectangles)
-still overlap. The purple polygon is the modelled floodplain.
+Figure \@ref(fig:footprint-map) shows this visually. Blue dots are centroids
+that land inside the floodplain. Red dots are centroids outside it whose
+footprints (grey rectangles) still overlap.
 
-```{r footprint-map, eval=TRUE, echo=FALSE, out.width="100%", fig.cap="Blue: centroids inside floodplain (40). Red: centroids outside whose footprints overlap (218). Purple: modelled floodplain. Grey: estimated photo footprints."}
+```{r footprint-map, eval=TRUE, echo=FALSE, out.width="100%", fig.cap="Centroid vs footprint filtering. Blue: centroids inside floodplain (40). Red: centroids outside whose footprints overlap (218). Purple: modelled floodplain. Grey: estimated photo footprints."}
 knitr::include_graphics("../man/figures/centroid-vs-footprint.png")
 ```
 
-## Step 3: Launch diggs and select photos
+## Launch diggs and select photos {-}
 
 ```{r launch}
 diggs::run_app()
@@ -139,13 +139,13 @@ In the app:
 5. Click **Select** to run resolution-prioritized selection
 6. Click **Download CSV** to export
 
-## Step 4: What we got
+## Coverage target and component coverage
 
 Footprint filtering finds **258 photos** whose coverage overlaps the floodplain
-(vs just 40 by centroid — see above). The priority selection algorithm then
-picks which of those 258 to actually order: all finest-scale photos first,
-then backfilling remaining AOI gaps with coarser scales until the coverage
-target is met.
+(vs just 40 by centroid — see Figure \@ref(fig:footprint-map)). The priority
+selection algorithm then picks which of those 258 to actually order: all
+finest-scale photos first, then backfilling remaining AOI gaps with coarser
+scales until the coverage target is met.
 
 At the default **95% coverage target**, the selection returns **148 photos**:
 
@@ -165,11 +165,10 @@ table(sel$scale)
 #     130      18
 ```
 
-## Why not 100% coverage?
-
 The last few percent of coverage is expensive. Pushing from 95% to 100%
-requires **101 additional coarse-scale photos** to fill tiny gaps between the
-fine-scale footprints:
+requires **101 additional coarse-scale photos** — all 1:31,680 — to fill tiny
+gaps between the fine-scale footprints. The 130 priority 1:12,000 photos are
+the same at every target:
 
 | Target | Photos | Coverage | 1:12,000 | 1:31,680 |
 |--------|--------|----------|----------|----------|
@@ -178,19 +177,17 @@ fine-scale footprints:
 | 90% | 144 | 94.3% | 130 | 14 |
 | 85% | 142 | 91.8% | 130 | 12 |
 
-The 130 priority 1:12,000 photos are the same at every target — only the
-coarse-scale backfill changes. At 100%, you need 119 coarse photos; at 95%,
-just 18. All 101 dropped photos are 1:31,680 — the fine-scale set is
-completely untouched. The 2.3% of uncovered AOI consists of thin slivers
-between fine-scale footprints that are unlikely to contain information not
-already captured by adjacent photos.
+However, the 95% target optimizes total area and can leave entire stream
+reaches uncovered — Buck Creek's floodplain segments are small relative to the
+total AOI, so the algorithm skips them. Enable **Ensure all AOI components
+covered** to guarantee at least one photo on every disconnected floodplain
+polygon before optimizing for area. This adds ~25 photos (173 vs 148) but
+plugs the blind spots — far cheaper than pushing to 100% (249 photos).
+Figure \@ref(fig:ensure-components) shows the result.
 
-```{r coverage-map, eval=TRUE, echo=FALSE, out.width="100%", fig.cap="Blue: kept 1:12,000 photos (130). Green: kept 1:31,680 photos (18). Red: dropped 1:31,680 photos (101). Purple: modelled floodplain. All dropped photos are coarse-scale — the fine-scale set is untouched."}
-knitr::include_graphics("../man/figures/coverage-95-vs-100.png")
+```{r ensure-components, eval=TRUE, echo=FALSE, out.width="100%", fig.cap="With component coverage enabled: 173 photos at 99.4% coverage. Blue footprints are selected, grey are unselected. Every floodplain polygon has at least one photo — no blind spots on Buck Creek or other isolated segments."}
+knitr::include_graphics("../man/figures/ensure-components.png")
 ```
-
-diggs defaults to 95% for this reason. You can adjust the slider in the app
-to trade off between completeness and cost.
 
 ## Pruning floodplain fragments
 
@@ -210,19 +207,19 @@ removes 261 of 288 polygons while only reducing the selection from 148 to 141:
 
 The 95% target already handles most edge trimming — fragment pruning
 complements it but doesn't stack dramatically. The dropped photos all land on
-the periphery; the core riverscape coverage stays intact.
+the periphery; the core riverscape coverage stays intact
+(Figure \@ref(fig:pruned-map)).
 
-```{r pruned-map, eval=TRUE, echo=FALSE, out.width="100%", fig.cap="At 95% coverage target: purple = floodplain >= 10 ha (27 polys), orange = fragments < 10 ha (261 polys), blue = kept photos (141), red = dropped photos (9), grey = footprints for kept set."}
+```{r pruned-map, eval=TRUE, echo=FALSE, out.width="100%", fig.cap="Fragment pruning at 95% coverage target. Purple: floodplain >= 10 ha (27 polys). Orange: fragments < 10 ha (261 polys). Blue: kept photos (141). Red: dropped photos (9). Grey: footprints for kept set."}
 knitr::include_graphics("../man/figures/pruned-vs-raw.png")
 ```
 
 This pruning is a stopgap — a simple area threshold doesn't account for network
 position. A fragment between two large floodplain polygons should be kept
 regardless of size, while an isolated pocket on upper Foxy Creek should be
-dropped even if it's 15 ha. Network-aware pruning is planned for
-[fresh](https://github.com/NewGraphEnvironment/sred-2025-2026/issues/18)
-(FWA-Referenced Spatial Hydrology), which will snap polygons to the stream
-network and prune based on connectivity rather than area alone.
+dropped even if it's 15 ha. Network-aware pruning that snaps polygons to the
+stream network and prunes based on connectivity rather than area alone would
+be a more principled approach.
 
 ## What comes next
 

@@ -69,6 +69,10 @@ mod_filters_ui <- function(id, layers) {
       min = 0, max = 100, value = 95, step = 5,
       post = "%"
     ),
+    shiny::checkboxInput(
+      ns("ensure_components"), "Ensure all AOI components covered",
+      value = TRUE
+    ),
     shiny::actionButton(
       ns("run_select"), "Select",
       class = "btn-sm btn-primary"
@@ -206,7 +210,8 @@ mod_filters_server <- function(id, layers, drawn_aoi = shiny::reactiveVal(NULL))
             sel <- fly::fly_select(photos_sc, remaining_sf, mode = "all")
           } else {
             sel <- fly::fly_select(photos_sc, remaining_sf,
-                              mode = "minimal", target_coverage = target)
+                              mode = "minimal", target_coverage = target,
+                              component_ensure = input$ensure_components)
           }
 
           if (nrow(sel) == 0) next
