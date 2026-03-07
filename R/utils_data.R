@@ -9,7 +9,7 @@ load_cached_layers <- function(data_dir = "data") {
   if (length(layers_to_load) == 0) {
     stop(
       "No geojson files found in ", data_dir,
-      ". Run scripts/cache_data.R first."
+      ". Run data-raw/cache_data.R first."
     )
   }
 

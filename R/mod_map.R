@@ -39,7 +39,7 @@ mod_map_server <- function(id, layers, filters, drawn_aoi) {
         ) |>
         leaflet::addPolygons(
           data = layers$aoi,
-          color = "yellow", weight = 2, fillOpacity = 0,
+          color = "red", weight = 2, fillOpacity = 0,
           group = "Area of Interest"
         ) |>
         leaflet.extras::addDrawToolbar(

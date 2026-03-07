@@ -6,24 +6,26 @@
 app_ui <- function(request) {
 
   # Load cached data for UI initialization
-
   layers <- load_cached_layers(get_golem_config("data_dir"))
 
-  bslib::page_sidebar(
-    title = tags$a(
-      href = "https://github.com/NewGraphEnvironment/diggs",
-      tags$img(
-        src = "www/logo.png",
-        height = "46px",
-        style = "margin-top: -8px;"
-      )
-    ),
-    sidebar = bslib::sidebar(
-      width = 300,
-      mod_filters_ui("filters", layers)
-    ),
-    mod_map_ui("map"),
-    mod_table_ui("table")
+  tagList(
+    golem_add_external_resources(),
+    bslib::page_sidebar(
+      title = tags$a(
+        href = "https://github.com/NewGraphEnvironment/diggs",
+        tags$img(
+          src = "www/nge-icon.png",
+          height = "46px",
+          style = "margin-top: -8px;"
+        )
+      ),
+      sidebar = bslib::sidebar(
+        width = 300,
+        mod_filters_ui("filters", layers)
+      ),
+      mod_map_ui("map"),
+      mod_table_ui("table")
+    )
   )
 }
 
