@@ -278,6 +278,7 @@ mod_filters_server <- function(id, layers, drawn_aoi = shiny::reactiveVal(NULL))
 
     list(
       filtered_data = filtered_data,
+      selected_data = selected_result,
       custom_aoi = custom_aoi,
       show_footprints = shiny::reactive(input$show_footprints)
     )

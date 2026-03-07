@@ -56,7 +56,9 @@ mod_map_server <- function(id, layers, filters, drawn_aoi) {
         leaflet::addLayersControl(
           baseGroups = c("Topo", "ESRI Aerial"),
           overlayGroups = c("Streams", "Railway", "Area of Interest",
-                           "Centroids", "Custom AOI"),
+                           "Centroids", "Custom AOI",
+                           "Footprints", "Footprints (selected)",
+                           "Footprints (unselected)"),
           options = leaflet::layersControlOptions(collapsed = FALSE)
         ) |>
         leaflet.extras::addFullscreenControl() |>
@@ -128,9 +130,12 @@ mod_map_server <- function(id, layers, filters, drawn_aoi) {
     shiny::observeEvent(filters$show_footprints(), {
       bounds <- input$map_bounds
       dat <- filters$filtered_data()
+      sel <- filters$selected_data()
 
       leaflet::leafletProxy("map") |>
-        leaflet::clearGroup("Footprints")
+        leaflet::clearGroup("Footprints") |>
+        leaflet::clearGroup("Footprints (selected)") |>
+        leaflet::clearGroup("Footprints (unselected)")
 
       if (is.null(bounds) || is.null(dat) || nrow(dat) == 0) return()
 
@@ -157,27 +162,70 @@ mod_map_server <- function(id, layers, filters, drawn_aoi) {
         return()
       }
 
-      shiny::withProgress(message = "Computing footprints...", {
-        footprints <- fly::fly_footprint(dat_visible)
-      })
+      # If selection exists, split into selected vs unselected
+      if (!is.null(sel) && nrow(sel) > 0) {
+        selected_ids <- sel$airp_id
+        dat_sel <- dat_visible[dat_visible$airp_id %in% selected_ids, ]
+        dat_unsel <- dat_visible[!dat_visible$airp_id %in% selected_ids, ]
 
-      leaflet::leafletProxy("map") |>
-        leaflet::showGroup("Footprints") |>
-        leaflet::addPolygons(
-          data = footprints,
-          color = "black", weight = 1, fillOpacity = 0,
-          group = "Footprints",
-          popup = ~paste0(
-            "<b>", airp_id, "</b><br>",
-            "Year: ", photo_year, "<br>",
-            "Scale: ", scale
-          )
+        make_popup <- function(d) {
+          paste0("<b>", d$airp_id, "</b><br>",
+                 "Year: ", d$photo_year, "<br>",
+                 "Scale: ", d$scale)
+        }
+
+        shiny::withProgress(message = "Computing footprints...", {
+          if (nrow(dat_sel) > 0) {
+            fp_sel <- fly::fly_footprint(dat_sel)
+            leaflet::leafletProxy("map") |>
+              leaflet::addPolygons(
+                data = fp_sel,
+                color = "blue", weight = 1.5, fillOpacity = 0.08,
+                fillColor = "blue",
+                group = "Footprints (selected)",
+                popup = make_popup(dat_sel)
+              )
+          }
+          if (nrow(dat_unsel) > 0) {
+            fp_unsel <- fly::fly_footprint(dat_unsel)
+            leaflet::leafletProxy("map") |>
+              leaflet::addPolygons(
+                data = fp_unsel,
+                color = "grey", weight = 0.5, fillOpacity = 0.03,
+                fillColor = "grey",
+                group = "Footprints (unselected)",
+                popup = make_popup(dat_unsel)
+              )
+          }
+        })
+
+        shiny::showNotification(
+          paste0(nrow(dat_sel), " selected + ", nrow(dat_unsel), " unselected footprints"),
+          type = "message"
         )
+      } else {
+        # No selection — show all footprints
+        shiny::withProgress(message = "Computing footprints...", {
+          footprints <- fly::fly_footprint(dat_visible)
+        })
 
-      shiny::showNotification(
-        paste0("Showing ", nrow(dat_visible), " footprints"),
-        type = "message"
-      )
+        leaflet::leafletProxy("map") |>
+          leaflet::addPolygons(
+            data = footprints,
+            color = "black", weight = 1, fillOpacity = 0,
+            group = "Footprints",
+            popup = ~paste0(
+              "<b>", airp_id, "</b><br>",
+              "Year: ", photo_year, "<br>",
+              "Scale: ", scale
+            )
+          )
+
+        shiny::showNotification(
+          paste0("Showing ", nrow(dat_visible), " footprints"),
+          type = "message"
+        )
+      }
     })
   })
 }
