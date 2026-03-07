@@ -118,11 +118,15 @@ mod_filters_server <- function(id, layers, drawn_aoi = shiny::reactiveVal(NULL))
       if (!is.null(up)) up else dr
     })
 
-    filtered_data <- shiny::reactive({
+    filtered_data_raw <- shiny::reactive({
       dat <- centroids
 
-      yr_min <- input$year_min %||% min(centroids$photo_year)
-      yr_max <- input$year_max %||% max(centroids$photo_year)
+      valid_range <- range(centroids$photo_year, na.rm = TRUE)
+      yr_min <- input$year_min %||% valid_range[1]
+      yr_max <- input$year_max %||% valid_range[2]
+      yr_min <- max(yr_min, valid_range[1])
+      yr_max <- min(yr_max, valid_range[2])
+      if (yr_min > yr_max) return(dat[0, ])
       dat <- dat |>
         dplyr::filter(photo_year >= yr_min, photo_year <= yr_max)
 
@@ -149,6 +153,9 @@ mod_filters_server <- function(id, layers, drawn_aoi = shiny::reactiveVal(NULL))
       dat
     })
 
+    # Debounce so rapid year clicks don't queue heavy spatial operations
+    filtered_data <- filtered_data_raw |> shiny::debounce(500)
+
     # Priority selection — runs on button click, doesn't change map/table
     shiny::observeEvent(input$run_select, {
       dat <- filtered_data()
@@ -159,6 +166,14 @@ mod_filters_server <- function(id, layers, drawn_aoi = shiny::reactiveVal(NULL))
 
       if (is.null(dat) || nrow(dat) == 0 || is.null(aoi)) {
         shiny::showNotification("No photos or AOI to select from", type = "warning")
+        return()
+      }
+
+      if (nrow(dat) > 500) {
+        shiny::showNotification(
+          paste0("Too many photos (", nrow(dat), "). Filter to 500 or fewer before selecting."),
+          type = "warning"
+        )
         return()
       }
 
@@ -263,6 +278,7 @@ mod_filters_server <- function(id, layers, drawn_aoi = shiny::reactiveVal(NULL))
 
     list(
       filtered_data = filtered_data,
+      selected_data = selected_result,
       custom_aoi = custom_aoi,
       show_footprints = shiny::reactive(input$show_footprints)
     )
