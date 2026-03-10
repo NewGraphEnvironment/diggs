@@ -45,8 +45,8 @@ Shiny package) **Entry Point:** `app.R` (golem launcher via
 
 - `cache_data.R` — one-time download from BC Data Catalogue;
   configurable AOI (blk/drm)
-- `floodplain_neexdzii_co.R` — flooded VCA pipeline (Neexdzii Kwah
-  example)
+- `floodplain_co.R` — flooded VCA pipeline (area-neutral, parameterized
+  by blk/drm)
 - `make_hexsticker.R` — hex sticker generation
 
 ### data/ (gitignored)
