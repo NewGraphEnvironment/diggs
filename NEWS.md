@@ -1,5 +1,9 @@
 # diggs (development)
 
+- Replace raw SQL with fresh (`frs_network_prune()`, `frs_network()`) in data-raw scripts ([#20](https://github.com/NewGraphEnvironment/diggs/issues/20))
+- Add waterbody fill, dual stream order anchor, and falls exclusion to floodplain pipeline
+- Output 4 AOI variants (raw VCA, anchor 4+, anchor 2+, accessible) for app exploration
+- Rename vignette to `floodplain-select` with generic title
 - Show selected vs unselected footprints on map after priority selection (blue = kept, grey = dropped) ([#22](https://github.com/NewGraphEnvironment/diggs/issues/22))
 - Add black NGE icon to app navbar
 - Change AOI boundary color from yellow to red
