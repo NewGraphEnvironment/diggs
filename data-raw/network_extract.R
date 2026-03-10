@@ -1,93 +1,44 @@
 #!/usr/bin/env Rscript
 #
-# extract_network.R
+# network_extract.R
 #
-# Extract a stream network between two points on a mainstem using FWA
-# linear referencing: upstream_of(mouth) - upstream_of(cutoff)
+# Extract a stream network between two points using fresh.
+# Uses frs_network() with upstream_measure for network subtraction:
+# upstream_of(mouth) - upstream_of(cutoff).
+#
+# Template for fresh package workflows. The raw SQL version of this
+# script is in git history (commit 950e86c).
 #
 # Requires: SSH tunnel to newgraph DB on localhost:63333
 
-library(sf)
-library(DBI)
-library(RPostgres)
+library(fresh)
 library(leaflet)
 library(htmlwidgets)
 
 # --- Boundary points ---
 mouth_blk <- 360873822
 mouth_drm <- 216733
-
-cutoff_blk <- 360873822
 cutoff_drm <- 222000
-
 min_order <- 4
 
-# --- Connect ---
-conn <- DBI::dbConnect(
-  RPostgres::Postgres(),
-  host = "localhost", port = 63333,
-  dbname = "bcfishpass", user = "newgraph"
-)
-
 # --- Extract network between two points ---
-sql <- glue::glue("
-  WITH mouth AS (
-    SELECT wscode, localcode
-    FROM bcfishpass.streams_co_vw
-    WHERE blue_line_key = {mouth_blk}
-      AND downstream_route_measure <= {mouth_drm}
-    ORDER BY downstream_route_measure DESC
-    LIMIT 1
-  ),
-  cutoff AS (
-    SELECT wscode, localcode
-    FROM bcfishpass.streams_co_vw
-    WHERE blue_line_key = {cutoff_blk}
-      AND downstream_route_measure <= {cutoff_drm}
-    ORDER BY downstream_route_measure DESC
-    LIMIT 1
+network <- frs_network(
+  blue_line_key = mouth_blk,
+  downstream_route_measure = mouth_drm,
+  upstream_measure = cutoff_drm,
+  tables = list(
+    streams = list(
+      table = "bcfishpass.streams_co_vw",
+      cols = c("segmented_stream_id", "blue_line_key", "waterbody_key",
+               "downstream_route_measure", "gnis_name", "stream_order",
+               "channel_width", "mapping_code", "rearing", "spawning",
+               "access", "geom"),
+      wscode_col = "wscode",
+      localcode_col = "localcode",
+      extra_where = paste0("s.stream_order >= ", min_order)
+    )
   )
-  -- Mainstem: DRM range
-  SELECT s.segmented_stream_id, s.blue_line_key, s.waterbody_key,
-         s.downstream_route_measure, s.gnis_name, s.stream_order,
-         s.channel_width, s.mapping_code, s.rearing, s.spawning, s.access,
-         ST_Transform(s.geom, 4326) as geom
-  FROM bcfishpass.streams_co_vw s
-  WHERE s.blue_line_key = {mouth_blk}
-    AND s.downstream_route_measure >= {mouth_drm}
-    AND s.downstream_route_measure <= {cutoff_drm}
-    AND s.stream_order >= {min_order}
-
-  UNION ALL
-
-  -- Tributaries: upstream of mouth, not upstream of cutoff
-  SELECT s.segmented_stream_id, s.blue_line_key, s.waterbody_key,
-         s.downstream_route_measure, s.gnis_name, s.stream_order,
-         s.channel_width, s.mapping_code, s.rearing, s.spawning, s.access,
-         ST_Transform(s.geom, 4326) as geom
-  FROM bcfishpass.streams_co_vw s, mouth m
-  WHERE s.watershed_group_code = 'BULK'
-    AND s.blue_line_key != {mouth_blk}
-    AND s.stream_order >= {min_order}
-    AND FWA_Upstream(
-      m.wscode, m.localcode,
-      s.wscode, s.localcode
-    )
-    AND NOT EXISTS (
-      SELECT 1 FROM cutoff c
-      WHERE FWA_Upstream(
-        c.wscode, c.localcode,
-        s.wscode, s.localcode
-      )
-    )
-")
-
-message("Querying network between drm ", mouth_drm, " and ", cutoff_drm,
-        " on blk ", mouth_blk, " (order >= ", min_order, ")...")
-network <- sf::st_read(conn, query = sql) |>
-  sf::st_zm(drop = TRUE)
-
-DBI::dbDisconnect(conn)
+)
 
 message("  ", nrow(network), " segments")
 message("  Streams: ", paste(unique(na.omit(network$gnis_name)), collapse = ", "))
@@ -112,8 +63,4 @@ m <- leaflet(network) |>
 
 out_html <- "data/extract_network.html"
 saveWidget(m, file = normalizePath(out_html, mustWork = FALSE), selfcontained = TRUE)
-message("\nSaved: ", out_html)
-
-out_geojson <- "data/network/network_bulk_richfield_cesford.geojson"
-sf::st_write(network, out_geojson, delete_dsn = TRUE, quiet = TRUE)
-message("Saved: ", out_geojson)
+message("Saved: ", out_html)

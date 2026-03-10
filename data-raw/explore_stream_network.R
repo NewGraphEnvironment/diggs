@@ -4,35 +4,32 @@
 #
 # Interactive map of rearing streams with blue_line_key and
 # downstream_route_measure in popups. Click segments to identify
-# the boundary points for network extraction.
+# boundary points for network extraction.
+#
+# Template for fresh package workflows. The raw SQL version of this
+# script is in git history (commit 950e86c).
 #
 # Requires: SSH tunnel to newgraph DB on localhost:63333
-#
-# Usage: Rscript scripts/explore_stream_network.R
 
-library(sf)
-library(DBI)
-library(RPostgres)
+library(fresh)
 library(leaflet)
 library(htmlwidgets)
 
-source("R/utils_photos.R")
-
-# --- Connect and query ---
-conn <- DBI::dbConnect(
-  RPostgres::Postgres(),
-  host = "localhost", port = 63333,
-  dbname = "bcfishpass", user = "newgraph"
-)
-
 # All coho rearing streams in BULK, order 4+
-streams <- flood_query_habitat(conn, "BULK",
-  habitat_type = "rearing",
-  species_code = "co",
-  min_stream_order = 4
+streams <- frs_network_prune(
+  blue_line_key = 360873822,
+  downstream_route_measure = 166030.4,
+  stream_order_min = 4,
+  watershed_group_code = "BULK",
+  extra_where = "(s.rearing > 0 OR s.spawning > 0)",
+  table = "bcfishpass.streams_co_vw",
+  cols = c("segmented_stream_id", "blue_line_key", "waterbody_key",
+           "downstream_route_measure", "gnis_name", "stream_order",
+           "channel_width", "mapping_code", "rearing", "spawning",
+           "access", "geom"),
+  wscode_col = "wscode",
+  localcode_col = "localcode"
 )
-
-DBI::dbDisconnect(conn)
 
 # --- Build popup with blk + drm ---
 streams$popup <- paste0(
@@ -66,7 +63,3 @@ out <- "data/explore_streams.html"
 saveWidget(m, file = normalizePath(out, mustWork = FALSE), selfcontained = TRUE)
 message("Saved: ", out)
 message("\nClick stream segments to see blk + drm values.")
-message("Identify two points:")
-message("  1. Downstream end of Neexdzii Kwah (mouth)")
-message("  2. Upstream end of mainstem (where to cut off headwaters)")
-message("\nThen we'll extract: upstream_of(mouth) - upstream_of(cutoff)")
