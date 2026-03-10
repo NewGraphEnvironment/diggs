@@ -1,8 +1,8 @@
 ---
-title: "Selecting 1968 Airphotos for the Neexdzii Kwah Floodplain"
+title: "Selecting Historic Airphotos for Floodplain Change Detection"
 output: bookdown::html_document2
 vignette: >
-  %\VignetteIndexEntry{Selecting 1968 Airphotos for the Neexdzii Kwah Floodplain}
+  %\VignetteIndexEntry{Selecting Historic Airphotos for Floodplain Change Detection}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -45,45 +45,81 @@ The floodplain AOI comes from [`flooded::fl_valley_confine()`](https://www.newgr
 confinement algorithm that uses a DEM, slope raster, stream network, and
 precipitation to model where water can spread laterally.
 
-The script `data-raw/vignette_neexdzii.R` runs this pipeline:
+The script `data-raw/floodplain_co.R` runs this pipeline:
 
 ```{r floodplain}
 library(flooded)
+library(fresh)
 
-# Query coho streams (order >= 4) from bcfishpass
-conn <- DBI::dbConnect(RPostgres::Postgres(),
-  host = "localhost", port = 63333,
-  dbname = "bcfishpass", user = "newgraph"
+# Query order 4+ streams for VCA input
+streams_vca <- frs_network_prune(
+  blue_line_key = 360873822,
+  downstream_route_measure = 166030.4,
+  stream_order_min = 4, watershed_group_code = "BULK",
+  table = "bcfishpass.streams_co_vw",
+  cols = c("segmented_stream_id", "blue_line_key", "waterbody_key",
+           "downstream_route_measure", "upstream_area_ha",
+           "map_upstream", "gnis_name", "stream_order", "channel_width",
+           "mapping_code", "rearing", "spawning", "access", "geom"),
+  wscode_col = "wscode", localcode_col = "localcode"
+) |> sf::st_zm(drop = TRUE)
+
+# Query order 2+ streams for connectivity anchor
+streams_anchor <- frs_network_prune(
+  blue_line_key = 360873822,
+  downstream_route_measure = 166030.4,
+  stream_order_min = 2, watershed_group_code = "BULK",
+  table = "bcfishpass.streams_co_vw",
+  cols = c("segmented_stream_id", "blue_line_key", "upstream_area_ha",
+           "stream_order", "geom"),
+  wscode_col = "wscode", localcode_col = "localcode"
+) |> sf::st_zm(drop = TRUE)
+
+# Query waterbodies (lakes + wetlands) for VCA gap-filling
+wb <- frs_network(
+  blue_line_key = 360873822, downstream_route_measure = 166030.4,
+  tables = list(
+    lakes = "whse_basemapping.fwa_lakes_poly",
+    wetlands = "whse_basemapping.fwa_wetlands_poly"
+  )
 )
-streams <- sf::st_read(conn, query = sql) |> sf::st_zm(drop = TRUE)
-# 1,165 segments across 20 named streams
+waterbodies <- rbind(
+  wb$lakes[, "geom"] |> sf::st_zm(drop = TRUE),
+  wb$wetlands[, "geom"] |> sf::st_zm(drop = TRUE)
+)
 
-# Rasterize precipitation (mean annual precip from upstream area)
-precip_r <- fl_stream_rasterize(streams, dem, field = "map_upstream")
-
-# Run VCA
+# Run VCA with waterbodies (fills lake/wetland donut holes)
 valleys <- fl_valley_confine(
-  dem, streams,
+  dem, streams_vca,
   field = "upstream_area_ha",
-  slope = slope,
-  slope_threshold = 9,
-  max_width = 2000,
-  cost_threshold = 2500,
-  flood_factor = 6,
-  precip = precip_r,
-  size_threshold = 5000,
-  hole_threshold = 2500
+  slope = slope, slope_threshold = 9, max_width = 2000,
+  cost_threshold = 2500, flood_factor = 6,
+  precip = fl_stream_rasterize(streams_vca, dem, field = "map_upstream"),
+  size_threshold = 5000, hole_threshold = 2500,
+  waterbodies = waterbodies
 )
+
+# Dual stream order cleanup: order 2+ anchor sees tributaries connecting patches
+anchor_r <- fl_stream_rasterize(streams_anchor, dem, field = "upstream_area_ha")
+valleys <- fl_patch_conn(valleys, anchor_r)
+valleys <- fl_patch_rm(valleys, min_area = 5000)
 
 # Polygonize and save as GeoJSON for diggs
 valleys_poly <- fl_valley_poly(valleys)
 sf::st_write(sf::st_transform(valleys_poly, 4326),
-  "data/floodplain_neexdzii_co_4th_order.geojson"
+  "data/floodplain_co.geojson"
 )
 ```
 
-This produces a single polygon covering 123.5 km^2^ of modelled floodplain
-along 4th+ order coho streams.
+The script `data-raw/floodplain_co.R` outputs four AOI variants for
+exploring different levels of cleanup in diggs:
+
+1. **Raw VCA + waterbodies** — everything the algorithm produces
+2. **Anchor 4+** — patch cleanup using only order 4+ streams
+3. **Anchor 2+** — patch cleanup using order 2+ streams (retains wetland
+   complexes connected via small tributaries)
+4. **Accessible** — anchor 2+ minus watersheds upstream of Bulkley Falls
+   and Buck Falls
 
 ## Cache the watershed data {-}
 
@@ -133,7 +169,7 @@ diggs::run_app()
 In the app:
 
 1. Switch AOI mode to **Custom (draw or upload)**
-2. Upload `data/floodplain_neexdzii_co_4th_order.geojson`
+2. Upload `data/floodplain_co.geojson`
 3. Set **Filter Method** to **Footprint**
 4. Set year range to **1968--1968**
 5. Click **Select** to run resolution-prioritized selection
@@ -189,37 +225,35 @@ Figure \@ref(fig:ensure-components) shows the result.
 knitr::include_graphics("../man/figures/ensure-components.png")
 ```
 
-## Pruning floodplain fragments
+## Pruning floodplain fragments {-}
 
-The VCA produces 288 polygon fragments, but most are tiny artifacts on upper
-tributaries — 214 are under 1 ha. These isolated pockets on streams like Foxy
-Creek and upper Crow Creek expand the analysis extent for negligible floodplain
-area. Combined with the 95% coverage target, dropping fragments under 10 ha
-removes 261 of 288 polygons while only reducing the selection from 148 to 141:
+The raw VCA produces hundreds of polygon fragments, many of which are tiny
+artifacts on upper tributaries or disconnected from the stream network entirely.
+Two flooded functions clean this up before photo selection:
 
-| Min area filter | Polygons kept | Photos (95%) | Dropped |
-|----------------|---------------|--------------|---------|
-| None (raw) | 288 | 148 | — |
-| >= 1 ha | 74 | 144 | 4 |
-| >= 5 ha | 45 | 142 | 6 |
-| >= 10 ha | 27 | 141 | 7 |
-| >= 50 ha | 15 | 139 | 9 |
+- [`fl_patch_conn(valleys, anchor_r)`](https://newgraphenvironment.github.io/flooded/reference/fl_patch_conn.html)
+  keeps only floodplain patches that touch a rasterized stream cell. Isolated
+  patches (VCA artifacts on hillslopes, disconnected slivers) are dropped
+  regardless of size.
+- [`fl_patch_rm(valleys, min_area = 5000)`](https://newgraphenvironment.github.io/flooded/reference/fl_patch_rm.html)
+  removes remaining patches smaller than 5,000 m². These are too small to
+  meaningfully affect photo selection.
 
-The 95% target already handles most edge trimming — fragment pruning
-complements it but doesn't stack dramatically. The dropped photos all land on
-the periphery; the core riverscape coverage stays intact
-(Figure \@ref(fig:pruned-map)).
+**Dual stream order anchor:** The VCA uses order 4+ streams as input (clean
+output, avoids headwater noise), but the connectivity anchor uses order 2+
+streams. This matters because large wetland complexes (e.g., Buck Creek
+confluence) connect to the main floodplain via small tributaries. Using
+order 4+ for the anchor drops these; order 2+ retains them. See
+[flooded#27](https://github.com/NewGraphEnvironment/flooded/issues/27)
+for the worked example.
 
-```{r pruned-map, eval=TRUE, echo=FALSE, out.width="100%", fig.cap="Fragment pruning at 95% coverage target. Purple: floodplain >= 10 ha (27 polys). Orange: fragments < 10 ha (261 polys). Blue: kept photos (141). Red: dropped photos (9). Grey: footprints for kept set."}
-knitr::include_graphics("../man/figures/pruned-vs-raw.png")
-```
-
-This pruning is a stopgap — a simple area threshold doesn't account for network
-position. A fragment between two large floodplain polygons should be kept
-regardless of size, while an isolated pocket on upper Foxy Creek should be
-dropped even if it's 15 ha. Network-aware pruning that snaps polygons to the
-stream network and prunes based on connectivity rather than area alone would
-be a more principled approach.
+The remaining gaps between retained patches — where the VCA couldn't model
+floodplain but the riverscape is still continuous — will be addressed by
+[`fl_valley_fill()`](https://github.com/NewGraphEnvironment/flooded/issues/23).
+That function will buffer stream corridors in gaps (scaled by channel width),
+union with wetlands and lakes from
+[fresh](https://github.com/NewGraphEnvironment/fresh), and produce a
+continuous AOI.
 
 ## What comes next
 
@@ -234,7 +268,8 @@ changed, where, and when — the foundation for restoration prioritization.
 
 | Package | Role in this workflow |
 |---------|---------------------|
-| [flooded](https://github.com/NewGraphEnvironment/flooded) | Delineated the floodplain AOI |
+| [flooded](https://github.com/NewGraphEnvironment/flooded) | Floodplain delineation (`fl_valley_confine()`) and patch cleanup (`fl_patch_conn()`, `fl_patch_rm()`) |
+| [fresh](https://github.com/NewGraphEnvironment/fresh) | Stream network query (`frs_network_prune()`) |
 | [fly](https://github.com/NewGraphEnvironment/fly) | Computed footprints and ran coverage selection |
 | **diggs** | Interactive exploration and export |
 | [drift](https://github.com/NewGraphEnvironment/drift) | Next step — satellite land cover change analysis |
