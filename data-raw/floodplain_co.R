@@ -45,7 +45,6 @@ streams <- frs_network_prune(
   downstream_route_measure = drm,
   stream_order_min = min_order,
   watershed_group_code = "BULK",
-  extra_where = "(s.rearing > 0 OR s.spawning > 0)",
   table = "bcfishpass.streams_co_vw",
   cols = c("segmented_stream_id", "blue_line_key", "waterbody_key",
            "downstream_route_measure", "upstream_area_ha",
