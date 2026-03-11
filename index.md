@@ -87,16 +87,18 @@ coverage-based selection).
 
 diggs is one piece of a larger floodplain analysis workflow:
 
-| Package                                                   | Role                                                                     |
-|-----------------------------------------------------------|--------------------------------------------------------------------------|
-| [flooded](https://github.com/NewGraphEnvironment/flooded) | Delineate floodplain extents from DEMs and stream networks               |
-| **diggs**                                                 | Select historic airphotos covering those floodplains                     |
-| [drift](https://github.com/NewGraphEnvironment/drift)     | Track land cover change within floodplains over time (satellite imagery) |
-| [fly](https://github.com/NewGraphEnvironment/fly)         | Spatial operations on airphoto centroids (used by diggs internally)      |
+| Package                                                   | Role                                                                                                                                                  |
+|-----------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [fresh](https://github.com/NewGraphEnvironment/fresh)     | Query FWA stream networks, lakes, and wetlands from PostgreSQL                                                                                        |
+| [flooded](https://github.com/NewGraphEnvironment/flooded) | Delineate floodplain extents from DEMs and stream networks                                                                                            |
+| [breaks](https://github.com/NewGraphEnvironment/breaks)   | Interactive watershed break point delineation — click streams, snap to FWA network, delineate upstream watersheds, export break points and sub-basins |
+| **diggs**                                                 | Select historic airphotos covering those floodplains                                                                                                  |
+| [drift](https://github.com/NewGraphEnvironment/drift)     | Track land cover change within floodplains over time (satellite imagery)                                                                              |
+| [fly](https://github.com/NewGraphEnvironment/fly)         | Spatial operations on airphoto centroids (used by diggs internally)                                                                                   |
 
-Together: delineate the floodplain (flooded), find what it looked like
-historically (diggs + ordered airphotos), and measure what changed since
-(drift). The combination answers questions like: *where were the
-wetlands before this became pasture? Where did cottonwood galleries
-disappear? What was the riparian condition when salmon populations were
-healthy?*
+Together: query the stream network (fresh), delineate the floodplain
+(flooded), find what it looked like historically (diggs + ordered
+airphotos), and measure what changed since (drift). The combination
+answers questions like: *where were the wetlands before this became
+pasture? Where did cottonwood galleries disappear? What was the riparian
+condition when salmon populations were healthy?*
