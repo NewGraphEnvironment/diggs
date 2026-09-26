@@ -9,7 +9,8 @@ data/network/
 !data/.gitkeep
 
 # Claude Code
-.claude/
+.claude/*
+!.claude/visibility
 
 # R
 .Rproj.user
