@@ -36,6 +36,7 @@ network, and precipitation to model where water can spread laterally.
 The script `data-raw/floodplain_co.R` runs this pipeline:
 
 ``` r
+
 library(flooded)
 library(fresh)
 
@@ -117,6 +118,7 @@ script is parameterized by `blk` (blue line key) and `drm` (downstream
 route measure):
 
 ``` r
+
 # In data-raw/cache_data.R:
 blk <- 360873822    # Bulkley River
 drm <- 166030.4     # Neexdzii Kwa / Wedzin Kwa confluence
@@ -160,6 +162,7 @@ floodplain. Grey: estimated photo footprints.
 ## Launch diggs and select photos
 
 ``` r
+
 diggs::run_app()
 ```
 
@@ -195,6 +198,7 @@ agricultural clearing patterns. Only 18 coarse-scale photos are needed
 to reach 97.7% AOI coverage.
 
 ``` r
+
 sel <- read.csv("data/photo_selection_neexdzii_1968.csv")
 table(sel$scale)
 # 1:12000 1:31680
@@ -277,10 +281,10 @@ prioritization.
 
 ## Ecosystem
 
-| Package                                                   | Role in this workflow                                                                                 |
-|-----------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
+| Package | Role in this workflow |
+|----|----|
 | [flooded](https://github.com/NewGraphEnvironment/flooded) | Floodplain delineation (`fl_valley_confine()`) and patch cleanup (`fl_patch_conn()`, `fl_patch_rm()`) |
-| [fresh](https://github.com/NewGraphEnvironment/fresh)     | Stream network query (`frs_network_prune()`)                                                          |
-| [fly](https://github.com/NewGraphEnvironment/fly)         | Computed footprints and ran coverage selection                                                        |
-| **diggs**                                                 | Interactive exploration and export                                                                    |
-| [drift](https://github.com/NewGraphEnvironment/drift)     | Next step — satellite land cover change analysis                                                      |
+| [fresh](https://github.com/NewGraphEnvironment/fresh) | Stream network query (`frs_network_prune()`) |
+| [fly](https://github.com/NewGraphEnvironment/fly) | Computed footprints and ran coverage selection |
+| **diggs** | Interactive exploration and export |
+| [drift](https://github.com/NewGraphEnvironment/drift) | Next step — satellite land cover change analysis |
