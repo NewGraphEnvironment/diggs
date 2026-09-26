@@ -1,0 +1,29 @@
+# ------------------------------------------------
+# CITATION.cff file created with {cffr} R package
+# See also: https://docs.ropensci.org/cffr/
+# ------------------------------------------------
+ 
+cff-version: 1.2.0
+message: 'To cite package "diggs" in publications use:'
+type: software
+license: MIT
+title: 'diggs: Delineation-Informed Geographic Ground Selection'
+version: 0.1.0
+abstract: Interactive Shiny app for selecting historic orthophoto imagery from the
+  BC Data Catalogue. Draw polygons or upload a custom AOI, filter by year/media/scale,
+  view estimated photo footprints, and export selections to CSV. Built on the fly
+  package for spatial photo operations.
+authors:
+- family-names: Irvine
+  given-names: Al
+  email: al@newgraphenvironment.com
+  orcid: https://orcid.org/0000-0002-3495-2128
+repository-code: https://github.com/NewGraphEnvironment/diggs
+url: https://newgraphenvironment.github.io/diggs/
+date-released: '2026-03-06'
+contact:
+- family-names: Irvine
+  given-names: Al
+  email: al@newgraphenvironment.com
+  orcid: https://orcid.org/0000-0002-3495-2128
+
