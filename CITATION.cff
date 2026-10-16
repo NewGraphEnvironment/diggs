@@ -15,15 +15,33 @@ abstract: Interactive Shiny app for selecting historic orthophoto imagery from t
   package for spatial photo operations.
 authors:
 - family-names: Irvine
-  given-names: Al
+  given-names: Allan
   email: al@newgraphenvironment.com
   orcid: https://orcid.org/0000-0002-3495-2128
+  affiliation: New Graph Environment Ltd.
+preferred-citation:
+  title: 'diggs: Delineation-Informed Geographic Ground Selection'
+  authors:
+  - family-names: Irvine
+    given-names: Allan
+    email: al@newgraphenvironment.com
+    orcid: https://orcid.org/0000-0002-3495-2128
+    affiliation: New Graph Environment Ltd.
+  version: 0.1.0
+  date-released: '2026-03-06'
+  url: https://newgraphenvironment.github.io/diggs/
+  repository-code: https://github.com/NewGraphEnvironment/diggs
+  license: MIT
+  type: software
+  publisher:
+    name: New Graph Environment Ltd.
 repository-code: https://github.com/NewGraphEnvironment/diggs
 url: https://newgraphenvironment.github.io/diggs/
 date-released: '2026-03-06'
 contact:
 - family-names: Irvine
-  given-names: Al
+  given-names: Allan
   email: al@newgraphenvironment.com
   orcid: https://orcid.org/0000-0002-3495-2128
+  affiliation: New Graph Environment Ltd.
 
