@@ -92,12 +92,21 @@ diggs is one piece of a larger floodplain analysis workflow:
 
 | Package | Role |
 |----|----|
-| [fresh](https://github.com/NewGraphEnvironment/fresh) | Query FWA stream networks, lakes, and wetlands from PostgreSQL |
-| [flooded](https://github.com/NewGraphEnvironment/flooded) | Delineate floodplain extents from DEMs and stream networks |
-| [breaks](https://github.com/NewGraphEnvironment/breaks) | Interactive watershed break point delineation — click streams, snap to FWA network, delineate upstream watersheds, export break points and sub-basins |
-| **diggs** | Select historic airphotos covering those floodplains |
-| [drift](https://github.com/NewGraphEnvironment/drift) | Track land cover change within floodplains over time (satellite imagery) |
-| [fly](https://github.com/NewGraphEnvironment/fly) | Spatial operations on airphoto centroids (used by diggs internally) |
+| [link](https://www.newgraphenvironment.com/link/) | Build, compare and test fish habitat and access models, every fish habitat definition editable |
+| [fresh](https://www.newgraphenvironment.com/fresh/) | Splits streams at barriers, classifies habitat by species, traces what’s upstream |
+| [wet](https://www.newgraphenvironment.com/wet/) | Typical flow in nearly every stream, tested against gauges; station flow and temperature |
+| [flooded](https://www.newgraphenvironment.com/flooded/) | Maps floodplains from terrain: the valley floor a river can spread across |
+| [drift](https://www.newgraphenvironment.com/drift/) | Maps what changed in land cover, where and when, in a floodplain or any area, from free satellite maps or your own |
+| [fly](https://www.newgraphenvironment.com/fly/) | Puts BC’s historic airphotos back on the map from free thumbnails |
+| [cd](https://www.newgraphenvironment.com/cd/) | How far any BC watershed’s climate has shifted from your chosen baseline |
+| [knowledge](https://www.newgraphenvironment.com/knowledge/) | Starts from each species’ life history and tunes its fish habitat definitions from where sampling did and did not catch it |
+| [floodplains](https://www.newgraphenvironment.com/floodplains/) | Maps BC’s floodplains and how the land in them changed, one watershed group at a time |
+| [crate](https://www.newgraphenvironment.com/crate/) | Canonical schemas for data that changes shape, and provenance receipts for outputs |
+| [stac_floodplains_bc](https://www.newgraphenvironment.com/stac_floodplains_bc/) | Floodplains and land-cover change, a screen for where to look; by watershed group |
+
+Its sibling app, [breaks](https://www.newgraphenvironment.com/breaks/),
+clicks a stream, snaps to it, and delineates the watershed above the
+break.
 
 Together: query the stream network (fresh), delineate the floodplain
 (flooded), find what it looked like historically (diggs + ordered
